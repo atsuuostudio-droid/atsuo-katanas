@@ -109,13 +109,13 @@ local function horseClip()
         if yawRate < -25.0 then return 'idle_turn_r', 1.0 end
         return 'idle', 1.0
     end
-    if speed < 0 then return 'walk_bck_upp', math.max(0.6, -speed / Config.Speed.reverse) end
+    if speed < 0 then return 'walk', math.max(0.6, -speed / Config.AnimRefSpeed.walk) end
     local name = BAND_NAME[band]
     local clip = name
-    if yawRate > Config.TurnAnimThreshold then clip = name .. '_turn_l'
-    elseif yawRate < -Config.TurnAnimThreshold then clip = name .. '_turn_r'
-    elseif slope > Config.SlopeAnim then clip = name .. '_fwd_upp'
-    elseif slope < -Config.SlopeAnim then clip = name .. '_fwd_dwn' end
+    if Config.TurnAnims and yawRate > Config.TurnAnimThreshold then clip = name .. '_turn_l'
+    elseif Config.TurnAnims and yawRate < -Config.TurnAnimThreshold then clip = name .. '_turn_r'
+    elseif Config.SlopeAnim and slope > Config.SlopeAnim then clip = name .. '_fwd_upp'
+    elseif Config.SlopeAnim and slope < -Config.SlopeAnim then clip = name .. '_fwd_dwn' end
     local rate = math.abs(speed) / Config.AnimRefSpeed[name]
     return clip, math.max(0.65, math.min(1.45, rate))
 end
@@ -224,6 +224,14 @@ end
 -- ------------------------------------------------------------
 local horseGroup
 local function setupHorsePed(h)
+    -- textures d'origine : sans ca, GTA melange au hasard les variantes du modele (tete, corps, accessoires)
+    SetPedDefaultComponentVariation(h)
+    for comp = 0, 11 do
+        if GetNumberOfPedDrawableVariations(h, comp) > 0 then
+            SetPedComponentVariation(h, comp, 0, 0, 0)
+        end
+    end
+    ClearAllPedProps(h)
     SetEntityAsMissionEntity(h, true, true)
     SetBlockingOfNonTemporaryEvents(h, true)
     SetPedFleeAttributes(h, 0, false)
@@ -331,6 +339,13 @@ RegisterKeyMapping('+edo_siffler', 'Siffler son cheval', 'keyboard', Config.Whis
 
 RegisterCommand(Config.StoreCommand, function()
     if horse then deleteHorse() notify('~y~Cheval renvoye.') end
+end, false)
+
+-- test d'une animation du cheval (a pied, a cote de lui) : /chevalanim walk_turn_l
+RegisterCommand('chevalanim', function(_, a)
+    if not isAlive(horse) or mounted or not a[1] then return notify('Usage : /chevalanim nom (descendu du cheval)') end
+    loadDict(Config.HorseDict)
+    TaskPlayAnim(horse, Config.HorseDict, a[1], 4.0, -4.0, 4000, 1, 0.0, false, false, false)
 end, false)
 
 -- reglage de la selle en jeu : /chevalselle x y z  (sans argument : affiche la valeur)
@@ -597,4 +612,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.0.1 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.0.2 charge. /cheval ou H pour siffler.') end)

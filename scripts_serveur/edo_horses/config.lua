@@ -54,7 +54,8 @@ Config.HorseDict = 'creatures@deer@move'
 -- vitesse "naturelle" de chaque animation : sert a caler les pattes sur la vitesse reelle
 -- (si les sabots glissent : monte la valeur ; s'ils pedalent trop vite : baisse-la)
 Config.AnimRefSpeed = { walk = 1.9, trot = 4.2, canter = 7.2, gallop = 11.5 }
-Config.SlopeAnim = 0.18           -- pente a partir de laquelle on joue les animations montee / descente
+Config.SlopeAnim = false          -- animations montee/descente du modele : desactivees (elles font basculer le cheval)
+Config.TurnAnims = true          -- animations de virage (mettre false si le cheval se deforme en tournant)
 Config.TurnAnimThreshold = 40.0   -- vitesse de rotation (deg/s) a partir de laquelle on joue l'animation de virage
 
 -- Cavalier : posture de pilote (jambes ecartees, buste en avant au galop)
