@@ -57,6 +57,8 @@ corner=np.zeros((S,S),np.float32); q=int(S*0.11)
 for (ys,xs) in ((slice(0,q),slice(0,q)),(slice(0,q),slice(S-q,S)),(slice(S-q,S),slice(0,q)),(slice(S-q,S),slice(S-q,S))): corner[ys,xs]=1
 brass=(C(204,156,64)*(1+0.06*n2[...,None])).astype(np.float32)
 cv.rgb=cv.rgb*(1-corner[...,None])+brass*corner[...,None]; cv.spec=cv.spec*(1-corner)+0.9*corner; cv.h*=(1-corner)
+# coin bas-droit = laque noire (seppa)
+cv.rgb[S-q:S,S-q:S]=C(8,7,9); cv.spec[S-q:S,S-q:S]=0.85
 nrm=normal_from_height(cv2.GaussianBlur(cv.h,(0,0),1.0),6.0,wrap=False)
 save_rgb('/home/claude/akaguro/tex/tsuba_d.png',np.clip(cv.rgb,0,1))
 save_rgb('/home/claude/akaguro/tex/tsuba_n.png',nrm)
