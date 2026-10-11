@@ -63,14 +63,14 @@ Config.TurnAnimThreshold = 40.0   -- vitesse de rotation (deg/s) a partir de laq
 Config.RiderAnim = { idle = 'sit', walk = 'sit', trot = 'sit', canter = 'sit_fast', gallop = 'sit_fast',
                      leanL = 'lean_l_slow', leanR = 'lean_r_slow' }
 Config.RiderLean = true
--- Jambes : VRAIE posture de cavalier (animation sur mesure stream/edo_riding.ycd) :
+-- Jambes : VRAIE posture de cavalier (animation sur mesure stream/edo_cavalier.ycd) :
 -- jambes qui descendent le long du ventre, genoux en avant, pieds dans les etriers.
 -- Changeable en jeu : /chevaljambes 1 | 2 | 3 | 4 (sauvegarde par joueur)
 Config.RiderLegs = 1
 Config.LegStyles = {
-    { name = 'cavalier',         dict = 'edo_riding', clip = 'ride_b', single = true },
-    { name = 'cavalier serre',   dict = 'edo_riding', clip = 'ride_a', single = true },
-    { name = 'cavalier ecarte',  dict = 'edo_riding', clip = 'ride_c', single = true },
+    { name = 'cavalier',         dict = 'edo_cavalier', clip = 'ride_b', single = true },
+    { name = 'cavalier serre',   dict = 'edo_cavalier', clip = 'ride_a', single = true },
+    { name = 'cavalier ecarte',  dict = 'edo_cavalier', clip = 'ride_c', single = true },
     { name = 'jet-ski (ancien)', dict = 'veh@boat@jetski@front@base', clip = 'sit_idle', single = true },
 }
 
