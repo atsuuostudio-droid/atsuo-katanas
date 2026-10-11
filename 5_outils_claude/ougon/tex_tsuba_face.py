@@ -56,16 +56,29 @@ for rn,w in ((0.455,5),(0.815,6)):
     stroke([P(rn,t) for t in np.linspace(0,2*math.pi,240)],w,w)
 # ---- centre : habaki en or massif, gravure géométrique sombre ----
 cz=np.clip((0.235-rr)*S/2,0,1)
-goldbg=(C(206,156,56)*(1+0.05*n2[...,None])).astype(np.float32)
+goldbg=(C(218,170,70)*(1+0.015*n2[...,None])).astype(np.float32)
 eng=np.zeros((S,S),np.float32)
-for k in range(220):
-    a=rng.uniform(0,6.28); rn=np.sqrt(rng.uniform(0,1))*0.2; x,y=P(rn,a); s=rng.uniform(0.012,0.02)*RR; rot=rng.uniform(0,3.14)
-    cs_,sn=math.cos(rot),math.sin(rot)
-    poly=np.array([[x+cs_*s,y+sn*s],[x-sn*s*0.6,y+cs_*s*0.6],[x-cs_*s,y-sn*s],[x+sn*s*0.6,y-cs_*s*0.6]],np.float32)
-    cv2.polylines(eng,[(poly*16).astype(np.int32)],True,1.0,3,cv2.LINE_AA,4)
-    if rng.random()<0.5: cv2.circle(eng,(int(x*16),int(y*16)),int(s*0.35*16),1.0,3,cv2.LINE_AA,4)
-eng=cv2.GaussianBlur(eng,(0,0),0.8)
-habaki=goldbg*(1-0.6*eng[...,None])
+FF=16
+def rrect(x,y,w,h,r,th):
+    pts=[]
+    for (cx,cy,a0) in ((x+w-r,y+r,-math.pi/2),(x+w-r,y+h-r,0),(x+r,y+h-r,math.pi/2),(x+r,y+r,math.pi)):
+        for a in np.linspace(a0,a0+math.pi/2,6): pts.append((cx+math.cos(a)*r,cy+math.sin(a)*r))
+    cv2.polylines(eng,[(np.array(pts)*FF).astype(np.int32)],True,1.0,th,cv2.LINE_AA,4)
+# gravure : blocs arrondis, carrés, courbes, cercles (idéogrammes anciens), groupés au centre
+for k in range(70):
+    a=rng.uniform(0,6.28); rn=np.sqrt(rng.uniform(0,1))*0.16; x,y=P(rn,a)
+    s=rng.uniform(0.018,0.034)*RR; kind=rng.integers(0,4)
+    if kind==0: rrect(x-s/2,y-s/2,s*rng.uniform(.7,1.2),s*rng.uniform(.6,1.1),s*0.2,3)
+    elif kind==1: cv2.ellipse(eng,(int(x*FF),int(y*FF)),(int(s*0.5*FF),int(s*0.4*FF)),rng.uniform(0,180),rng.uniform(0,90),rng.uniform(180,330),1.0,3,cv2.LINE_AA,4)
+    elif kind==2: cv2.circle(eng,(int(x*FF),int(y*FF)),int(s*0.22*FF),1.0,3,cv2.LINE_AA,4)
+    else:
+        pts=np.array([(x+(t-.5)*s*1.4,y+math.sin(t*math.pi*1.5)*s*0.3) for t in np.linspace(0,1,10)])
+        cv2.polylines(eng,[(pts*FF).astype(np.int32)],False,1.0,3,cv2.LINE_AA,4)
+eng=cv2.GaussianBlur(eng,(0,0),0.7)
+# biseau : lumière d'un côté du trait, ombre de l'autre (gravure ciselée)
+gy,gx=np.gradient(cv2.GaussianBlur(eng,(0,0),1.2))
+bev=np.clip((gx-gy)*6,-1,1)
+habaki=goldbg*(1-0.32*eng[...,None])*(1+0.35*bev[...,None])
 cv.rgb=cv.rgb*(1-cz[...,None])+habaki*cz[...,None]; cv.spec=cv.spec*(1-cz)+(0.95-0.4*eng)*cz; cv.h=cv.h*(1-cz)+(0.5-0.35*eng)*cz
 # ---- coins : or uni ----
 corner=np.zeros((S,S),np.float32); q=int(S*0.11)
