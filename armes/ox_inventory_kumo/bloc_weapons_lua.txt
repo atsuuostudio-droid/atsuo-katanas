@@ -1,0 +1,8 @@
+-- A coller dans ox_inventory/data/weapons.lua, juste apres le dernier katana
+-- (le bloc d'avant doit finir par },)
+		['WEAPON_KATANA_KUMO'] = {
+			label = 'Katana Kumo',
+			description = "Lame d'acier traversée de nuages d'orage, monture noir et or.",
+			weight = 1500,
+			durability = 0.1,
+		},

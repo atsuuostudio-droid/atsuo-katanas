@@ -10,3 +10,9 @@ Kit de fabrication des katanas add-on du serveur FiveM **Atsuo RP** (ESX Legacy 
 | `4_modele_ressource/` | Ressource du Katana Kin (validée en jeu), à copier |
 | `5_outils_claude/` | Scripts de fabrication (monture 3D, textures, Sollumz) — voir `README_CLAUDE.md` |
 | `6_REGISTRE_ARMES.txt` | Slots / orders déjà pris (prochaine arme : 193 / 423) |
+
+## Armes livrées
+
+| Arme | Ressource | Blender (.blend + .dds) | ox_inventory |
+|---|---|---|---|
+| Katana Kumo (193 / 423) | `armes/atsuo_katana_kumo/` | `armes/blender_katana_kumo/` | `armes/ox_inventory_kumo/` |

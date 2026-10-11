@@ -34,3 +34,15 @@ recopier dans le même arborescence ou adapter.
   Le 1er Kin livré avait l'âme, la tsuba, le kashira, les menuki, seppa et habaki invisibles en jeu à cause de ça.
 - Tripo : objets longs/fins → lame écrasée, ornements grumeleux ; mode texte = résultat absurde. Monture seule recadrée = mieux, mais la reconstruction procédurale est la plus propre.
 - Le Kin fait ~29k triangles (ok en jeu).
+
+## Katana Kumo (11/10/2026) — lame procédurale, sans Tripo
+Scripts dans `kumo/` (chemins `/home/claude/kumo/...`). Même pipeline que le Kin, avec ces différences :
+- **Lame entièrement procédurale** (`blade_params.py` + début de `build_kumo.py`) : sori, gorge (bo-hi), shinogi, kissaki ;
+  UV = vue de côté (u = habaki → pointe, v = tranchant → dos), donc la texture `tex_lame_kumo.py` se dessine comme l'image de référence.
+- Textures monture : `tex_or.py` (volutes de nuages or), `tex_same_tsuba.py` (tsuba volutes + habaki gravé), `tex_ito.py` (soie noire).
+- **Contrôle des faces sans GPU** : `render_cull_cycles.py` (Cycles, faces vues de dos transparentes, fond magenta) remplace
+  `render_cull.py` (Workbench = EGL indisponible dans le conteneur).
+- **Placement vérifié contre une arme validée** : `lire_ydr.py` lit un .ydr natif (RSC7) ; `noir_pts.npy` = sommets du Katana Noir ;
+  `check_kumo.py` compare tsuba / axe / dos (Kumo : 0,26 cm, 0,06°, 0,11°).
+- Export test CWXML : créer le dossier `xmltest/` avant (`test_export_kumo.py`).
+- Pas de lueur : `EMISSIVE=0.0` dans `finitions_kumo.py` (shader normal_spec).

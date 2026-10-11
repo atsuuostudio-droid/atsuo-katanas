@@ -7,6 +7,7 @@ atsuo_tanto_noir       WEAPON_TANTO_NOIR       189 / 419
 atsuo_katana_glacier   WEAPON_KATANA_GLACIER   190 / 420
 atsuo_katana_oni       WEAPON_KATANA_ONI       191 / 421
 atsuo_katana_kin       WEAPON_KATANA_KIN       192 / 422
+atsuo_katana_kumo      WEAPON_KATANA_KUMO      193 / 423
 
-PROCHAINE ARME : 193 / 423   (puis 194 / 424, etc.)
+PROCHAINE ARME : 194 / 424   (puis 195 / 425, etc.)
 Pense a ajouter chaque nouvelle arme ici.
