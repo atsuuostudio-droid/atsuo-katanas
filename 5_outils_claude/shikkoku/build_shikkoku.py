@@ -1,5 +1,5 @@
 import bpy, bmesh, math, sys, numpy as np
-from mathutils import Vector
+from mathutils import Vector, Matrix
 sys.path.insert(0,'/home/claude/shikkoku/scripts')
 from params import *
 TEX='/home/claude/shikkoku/tex/'
@@ -260,7 +260,7 @@ kas=lathe('kashira',[(X_KASHI0,AY*s1-0.001,AZ*s1-0.001),(X_KASHI0,k_ry,k_rz),(X_
       (X_END-0.006,k_ry+0.0004,k_rz+0.0004),(X_END-0.0035,k_ry*0.97,k_rz*0.97),(X_END-0.0018,k_ry*0.86,k_rz*0.86),(X_END-0.0006,k_ry*0.62,k_rz*0.62),(X_END,k_ry*0.30,k_rz*0.30)],M_KIN,n=72,cap1=True,plain=(0,1,3))
 # ---------------- seppa ----------------
 def seppa(name,x0):
-    return lathe(name,[(x0,0.0172,0.0228),(x0+SEP_T,0.0172,0.0228)],M_TSUBA,n=72,cap0=True,cap1=True,plain=(0,))
+    return lathe(name,[(x0,0.0120,0.0260),(x0+SEP_T,0.0120,0.0260)],M_TSUBA,n=72,cap0=True,cap1=True,plain=(0,))
 sp0=seppa('seppa0',X_SEP0); sp1=seppa('seppa1',X_SEP1)
 for o in (sp0,sp1):  # UV vers le centre or lisse de la texture tsuba
     for l in o.data.uv_layers[0].data: pass
@@ -270,7 +270,7 @@ def remap_planar(o,ry,rz,scale_uv):
         for li in poly.loop_indices:
             v=me.vertices[me.loops[li].vertex_index].co
             uvl.data[li].uv=(0.95+v.y/ry*0.03,0.05+(v.z-zc(v.x))/rz*0.03)
-remap_planar(sp0,0.0172,0.0228,0.10); remap_planar(sp1,0.0172,0.0228,0.10)
+remap_planar(sp0,0.0120,0.0260,0.10); remap_planar(sp1,0.0120,0.0260,0.10)
 # ---------------- tsuba : disques de laque + bordure arrondie en RELIEF 3D ----------------
 from rim_params import TRY,TRZ,RING_W,HALF,BAND_W,REPS,AMP,D0
 RIMH=np.load(TEX+'rim_h.npy')
@@ -320,23 +320,9 @@ print('bordure retournee', orient(bordure,want_rim))
 NP=448; QS=[0.0,1.0]
 disks=[]
 for side in (-1,1):
-    bm=bmesh.new(); uv=bm.loops.layers.uv.new('UVMap')
     REC=0.0013   # face creusée : en retrait par rapport au rebord
     x=xm+side*(HALF-REC)
-    rings=[]
-    for q in QS:
-        if q==0: rings.append([bm.verts.new((x,0,zm))]); continue
-        rings.append([bm.verts.new((x,(TRY+D0)*q*math.sin(2*math.pi*j/NP),zm+(TRZ+D0)*q*math.cos(2*math.pi*j/NP))) for j in range(NP)])
     def fuv2(q,j): rf=q*(TRY+D0)/TRY; ph=2*math.pi*j/NP; return (0.5+side*0.5*rf*math.sin(ph),0.5+0.5*rf*math.cos(ph))
-    for ri in range(len(QS)-1):
-        for j in range(NP):
-            j2=(j+1)%NP
-            if ri==0: vs=[rings[0][0],rings[1][j],rings[1][j2]]; uvs=[(0.5,0.5),fuv2(QS[1],j),fuv2(QS[1],j+1)]
-            else: vs=[rings[ri][j],rings[ri+1][j],rings[ri+1][j2],rings[ri][j2]]; uvs=[fuv2(QS[ri],j),fuv2(QS[ri+1],j),fuv2(QS[ri+1],j+1),fuv2(QS[ri],j+1)]
-            f=bm.faces.new(vs)
-            for l,u_ in zip(f.loops,uvs): l[uv].uv=u_
-    bm.normal_update(); o=new_obj('tsuba_face%d'%side,bm,[M_TSUBA])
-    orient(o,lambda c,side=side: Vector((side,0,0))); disks.append(o)
     # paroi intérieure du rebord (relie le rebord au fond creusé)
     bmw=bmesh.new(); uvw=bmw.loops.layers.uv.new('UVMap')
     ra=[bmw.verts.new((xm+side*HALF,(TRY+D0)*math.sin(2*math.pi*j/NP),zm+(TRZ+D0)*math.cos(2*math.pi*j/NP))) for j in range(NP)]
@@ -346,7 +332,40 @@ for side in (-1,1):
         for l,u_ in zip(f.loops,[fuv2(1.0,j),fuv2(1.0,j+1),fuv2(0.985,j+1),fuv2(0.985,j)]): l[uvw].uv=u_
     bmw.normal_update(); ow=new_obj('tsuba_paroi%d'%side,bmw,[M_TSUBA])
     orient(ow,lambda c: -Vector((0,c.y,c.z-zm)).normalized()); disks.append(ow)
-tsuba_parts=[bordure]+disks
+# plaque AJOURÉE (sukashi) : contours du masque -> courbe 2D remplie + extrudée -> maillage percé
+import cv2
+MASK=np.load(TEX+'tsuba_mask.npy'); MS=MASK.shape[0]
+cs,hier=cv2.findContours((MASK>0).astype(np.uint8),cv2.RETR_CCOMP,cv2.CHAIN_APPROX_NONE)
+cu=bpy.data.curves.new('tsuba_ajour','CURVE'); cu.dimensions='2D'; cu.fill_mode='BOTH'
+cu.extrude=HALF-0.0013; cu.resolution_u=1
+npts=0
+for c_ in cs:
+    c_=cv2.approxPolyDP(c_,0.9,True)[:,0,:].astype(np.float64)
+    if len(c_)<3: continue
+    sp=cu.splines.new('POLY'); sp.points.add(len(c_)-1); sp.use_cyclic_u=True
+    for i_,(px_,py_) in enumerate(c_):
+        xn=(px_+0.5)/MS*2-1; yn=1-(py_+0.5)/MS*2
+        sp.points[i_].co=(xn*(TRY+D0),yn*(TRZ+D0),0,1)
+    npts+=len(c_)
+ob=bpy.data.objects.new('tsuba_ajour',cu); bpy.context.collection.objects.link(ob)
+ob.matrix_world=Matrix(((0,0,1,xm),(1,0,0,0),(0,1,0,zm),(0,0,0,1)))
+bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True); bpy.context.view_layer.objects.active=ob
+bpy.ops.object.convert(target='MESH'); ob=bpy.context.view_layer.objects.active
+bpy.ops.object.transform_apply(location=True,rotation=True,scale=True)
+me=ob.data; me.materials.clear(); me.materials.append(M_TSUBA)
+bm=bmesh.new(); bm.from_mesh(me)
+bmesh.ops.remove_doubles(bm,verts=bm.verts[:],dist=1e-7)
+bmesh.ops.recalc_face_normals(bm,faces=bm.faces[:])
+uvl=bm.loops.layers.uv.verify()
+for f in bm.faces:
+    if abs(f.normal.x)>0.7:   # faces avant/arrière : projection plane (même repère que la texture)
+        for l in f.loops: l[uvl].uv=(0.5+0.5*l.vert.co.y/TRY,0.5+0.5*(l.vert.co.z-zm)/TRZ)
+    else:                     # parois des jours : petit carré de fer uni du coin
+        for l in f.loops: l[uvl].uv=(0.955+0.02*l.vert.co.y/TRY,0.045+0.02*(l.vert.co.x-xm)/HALF)
+bm.to_mesh(me); bm.free(); me.update()
+print('tsuba ajouré : contours',len(cs),'points',npts,'verts',len(me.vertices),'faces',len(me.polygons))
+print('ajour retourne', orient(ob,lambda c: Vector((c.x-xm,0,0))))
+tsuba_parts=[bordure,ob]+disks
 # ---------------- habaki ----------------
 def hab_section(x,grow):
     pts=[]

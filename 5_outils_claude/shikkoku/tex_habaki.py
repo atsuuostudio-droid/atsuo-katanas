@@ -53,11 +53,7 @@ def curl(cx,cy,R,sgn,lift):
 t1=wave_layer(GH*0.34,mm(4.0),GW*1.1,0.4,mm(11),8,0.08)
 t2=wave_layer(GH*0.54,mm(4.5),GW*0.9,1.6,mm(12),9,0.12)
 t3=wave_layer(GH*0.75,mm(4.0),GW*1.0,2.9,mm(14),10,0.16)
-for (top,lift) in ((t1,0.08),(t2,0.12),(t3,0.16)):
-    d=np.diff(top); xs_=[i for i in range(1,len(d)) if d[i-1]<0<=d[i] and GW*0.08<i<GW*0.92]
-    if d[-1]<0: xs_.append(int(GW*0.86))
-    if d[0]>0: xs_.append(int(GW*0.14))
-    for x in xs_: curl(x,top[x]+mm(2.6),mm(2.8),1,lift)
+# (crêtes enroulées, écume et gouttelettes retirées à la demande : vagues seules)
 # cadre : léger chanfrein des bords
 de=np.minimum(np.minimum(xx,GW-1-xx),np.minimum(yy,GH-1-yy))
 H=H-0.05*np.exp(-(de/mm(0.5))**2)
