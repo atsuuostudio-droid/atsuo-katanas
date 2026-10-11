@@ -404,6 +404,22 @@ RegisterCommand('chevalmains', function(_, a)
     notify('~g~Mains reglees et sauvegardees.')
 end, false)
 
+-- diagnostic : position reelle des os des jambes (a copier depuis F8)
+RegisterCommand('chevaldebug', function()
+    local ped = PlayerPedId()
+    local bones = { {'LT',58271},{'LC',63931},{'LF',14201},{'LO',2108},{'RT',51826},{'RC',36864},{'RF',52301},{'RO',20781},{'PV',11816} }
+    local out = {}
+    for _, b in ipairs(bones) do
+        local idx = GetPedBoneIndex(ped, b[2])
+        local w = GetWorldPositionOfEntityBone(ped, idx)
+        local o = GetOffsetFromEntityGivenWorldCoords(ped, w.x, w.y, w.z)
+        out[#out + 1] = ('%s=%.3f,%.3f,%.3f'):format(b[1], o.x, o.y, o.z)
+    end
+    local line = 'EDODBG ' .. legStyle .. ' ' .. table.concat(out, ' ')
+    print(line)
+    notify('~g~Diagnostic ecrit dans F8 (ligne EDODBG).')
+end, false)
+
 -- posture des jambes : /chevaljambes 1 | 2 | 3
 RegisterCommand('chevaljambes', function(_, a)
     local n = tonumber(a[1])
@@ -687,4 +703,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.2.4 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.2.5 charge. /cheval ou H pour siffler.') end)
