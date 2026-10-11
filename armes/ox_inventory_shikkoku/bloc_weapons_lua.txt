@@ -1,0 +1,7 @@
+-- A coller dans ox_inventory/data/weapons.lua, juste apres le Katana Ōgon
+		['WEAPON_KATANA_SHIKKOKU'] = {
+			label = 'Katana Shikkoku',
+			description = "Entièrement noir de jais : lame noire aux volutes sombres, habaki ciselé de fleurs, tsuba gravé.",
+			weight = 1500,
+			durability = 0.1,
+		},
