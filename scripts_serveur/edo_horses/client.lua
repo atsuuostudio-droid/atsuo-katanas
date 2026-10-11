@@ -23,7 +23,7 @@ local GAIT_LABEL = { [0] = 'ARRÊT', 'AU PAS', 'TROT', 'PETIT GALOP', 'GALOP' }
 local seatOffset = Config.RiderOffset
 local seatRot = Config.RiderRotation
 do
-    local kvp = GetResourceKvpString('edo_horses_seat')
+    local kvp = GetResourceKvpString('edo_horses_seat2')
     if kvp then
         local x, y, z = kvp:match('([%-%d%.]+) ([%-%d%.]+) ([%-%d%.]+)')
         if x then seatOffset = vector3(tonumber(x), tonumber(y), tonumber(z)) end
@@ -151,18 +151,18 @@ do
         if a then handY, handZ = tonumber(a), tonumber(b) end
     end
 end
-local legStyle = tonumber(GetResourceKvpString('edo_horses_legs2') or '') or Config.RiderLegs or 1
+local legStyle = tonumber(GetResourceKvpString('edo_horses_legs3') or '') or Config.RiderLegs or 1
 if not Config.LegStyles[legStyle] then legStyle = 1 end
 local function legDict() return Config.LegStyles[legStyle].dict end
 local function updateRiderAnim(ped)
     local band = bandOf(speed)
     local key = band == 0 and 'idle' or BAND_NAME[band]
-    if Config.RiderLean and band >= 2 then
+    if Config.RiderLean and band >= 2 and not Config.LegStyles[legStyle].single then
         if yawRate > 45.0 then key = 'leanL' elseif yawRate < -45.0 then key = 'leanR' end
     end
     local clip = Config.RiderAnim[key] or 'sit'
     local ls = Config.LegStyles[legStyle]
-    if clip == 'sit' or ls.dict:find('jetski') then clip = ls.clip end
+    if clip == 'sit' or ls.single then clip = ls.clip end
     local changed = false
     local dict = legDict()
     if clip ~= curRider or not IsEntityPlayingAnim(ped, dict, clip, 3) then
@@ -416,7 +416,7 @@ RegisterCommand('chevaljambes', function(_, a)
     local ped = PlayerPedId()
     StopAnimTask(ped, legDict(), curRider or 'sit', 2.0)
     legStyle = n
-    SetResourceKvp('edo_horses_legs2', tostring(n))
+    SetResourceKvp('edo_horses_legs3', tostring(n))
     curRider = nil
     print(('[edo_horses] Config.RiderLegs = %d (%s)'):format(n, Config.LegStyles[n].name))
     notify('~g~Jambes : ' .. Config.LegStyles[n].name)
@@ -430,7 +430,7 @@ RegisterCommand('chevalselle', function(_, a)
         return notify(('Selle : %.2f %.2f %.2f  (usage : /chevalselle x y z)'):format(seatOffset.x, seatOffset.y, seatOffset.z))
     end
     seatOffset = vector3(x, y, z)
-    SetResourceKvp('edo_horses_seat', ('%.3f %.3f %.3f'):format(x, y, z))
+    SetResourceKvp('edo_horses_seat2', ('%.3f %.3f %.3f'):format(x, y, z))
     if mounted then attachRider(PlayerPedId()) end
     print(('[edo_horses] Config.RiderOffset = vector3(%.3f, %.3f, %.3f)'):format(x, y, z))
     notify('~g~Selle reglee et sauvegardee.')
@@ -687,4 +687,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.1.7 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.2.0 charge. /cheval ou H pour siffler.') end)

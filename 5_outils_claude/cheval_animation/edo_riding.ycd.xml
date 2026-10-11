@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ClipDictionary>
+ <Clips>
+  <Item>
+   <Hash>ride_a</Hash>
+   <Name>pack:/ride_a.clip</Name>
+   <Type value="Animation" />
+   <Unknown30 value="0" />
+   <Tags />
+   <Properties />
+   <AnimationHash>ride_a_anim</AnimationHash>
+   <StartTime value="0" />
+   <EndTime value="1" />
+   <Rate value="1" />
+  </Item>
+  <Item>
+   <Hash>ride_b</Hash>
+   <Name>pack:/ride_b.clip</Name>
+   <Type value="Animation" />
+   <Unknown30 value="0" />
+   <Tags />
+   <Properties />
+   <AnimationHash>ride_b_anim</AnimationHash>
+   <StartTime value="0" />
+   <EndTime value="1" />
+   <Rate value="1" />
+  </Item>
+  <Item>
+   <Hash>ride_c</Hash>
+   <Name>pack:/ride_c.clip</Name>
+   <Type value="Animation" />
+   <Unknown30 value="0" />
+   <Tags />
+   <Properties />
+   <AnimationHash>ride_c_anim</AnimationHash>
+   <StartTime value="0" />
+   <EndTime value="1" />
+   <Rate value="1" />
+  </Item>
+ </Clips>
+ <Animations>
+  <Item>
+   <Hash>ride_a_anim</Hash>
+   <Unknown10 value="0" />
+   <FrameCount value="31" />
+   <SequenceFrameLimit value="31" />
+   <Duration value="1" />
+   <Unknown1C>hash_00000000</Unknown1C>
+   <BoneIds>
+    <Item>
+     <BoneId value="58271" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="63931" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="14201" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="51826" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="36864" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="52301" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+   </BoneIds>
+   <Sequences>
+    <Item>
+     <Hash>hash_00000000</Hash>
+     <FrameCount value="31" />
+     <SequenceData>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="0.1103114" y="0.3152811" z="0.4310278" w="0.8382388" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="-0.0536074" y="-0.2030278" z="-0.5102625" w="0.8339893" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="-0.1568649" y="-0.0518819" z="0.6247149" w="0.7631730" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="-0.1103113" y="-0.3152805" z="0.4310278" w="0.8382390" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="0.0536075" y="0.2030277" z="-0.5102625" w="0.8339893" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="0.1568657" y="0.0518822" z="0.6247162" w="0.7631717" />
+        </Item>
+       </Channels>
+      </Item>
+     </SequenceData>
+    </Item>
+   </Sequences>
+  </Item>
+  <Item>
+   <Hash>ride_b_anim</Hash>
+   <Unknown10 value="0" />
+   <FrameCount value="31" />
+   <SequenceFrameLimit value="31" />
+   <Duration value="1" />
+   <Unknown1C>hash_00000000</Unknown1C>
+   <BoneIds>
+    <Item>
+     <BoneId value="58271" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="63931" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="14201" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="51826" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="36864" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="52301" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+   </BoneIds>
+   <Sequences>
+    <Item>
+     <Hash>hash_00000000</Hash>
+     <FrameCount value="31" />
+     <SequenceData>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="0.1280141" y="0.3710546" z="0.4014417" w="0.8275117" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="-0.0584548" y="-0.2301179" z="-0.4864633" w="0.8408223" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="-0.1886569" y="-0.0719844" z="0.6143335" w="0.7627721" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="-0.1280140" y="-0.3710541" z="0.4014418" w="0.8275118" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="0.0584549" y="0.2301178" z="-0.4864633" w="0.8408225" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="0.1886577" y="0.0719847" z="0.6143349" w="0.7627707" />
+        </Item>
+       </Channels>
+      </Item>
+     </SequenceData>
+    </Item>
+   </Sequences>
+  </Item>
+  <Item>
+   <Hash>ride_c_anim</Hash>
+   <Unknown10 value="0" />
+   <FrameCount value="31" />
+   <SequenceFrameLimit value="31" />
+   <Duration value="1" />
+   <Unknown1C>hash_00000000</Unknown1C>
+   <BoneIds>
+    <Item>
+     <BoneId value="58271" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="63931" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="14201" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="51826" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="36864" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+    <Item>
+     <BoneId value="52301" />
+     <Track value="1" />
+     <Unk0 value="1" />
+    </Item>
+   </BoneIds>
+   <Sequences>
+    <Item>
+     <Hash>hash_00000000</Hash>
+     <FrameCount value="31" />
+     <SequenceData>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="0.1457341" y="0.4245836" z="0.3783984" w="0.8095092" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="-0.0637989" y="-0.2561720" z="-0.4697316" w="0.8424119" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="-0.2198952" y="-0.0919182" z="0.6021279" w="0.7619968" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="-0.1457340" y="-0.4245830" z="0.3783984" w="0.8095095" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="0.0637990" y="0.2561719" z="-0.4697315" w="0.8424121" />
+        </Item>
+       </Channels>
+      </Item>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticQuaternion" />
+         <Value x="0.2198960" y="0.0919184" z="0.6021292" w="0.7619955" />
+        </Item>
+       </Channels>
+      </Item>
+     </SequenceData>
+    </Item>
+   </Sequences>
+  </Item>
+ </Animations>
+</ClipDictionary>

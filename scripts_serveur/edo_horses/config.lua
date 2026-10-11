@@ -63,18 +63,15 @@ Config.TurnAnimThreshold = 40.0   -- vitesse de rotation (deg/s) a partir de laq
 Config.RiderAnim = { idle = 'sit', walk = 'sit', trot = 'sit', canter = 'sit_fast', gallop = 'sit_fast',
                      leanL = 'lean_l_slow', leanR = 'lean_r_slow' }
 Config.RiderLean = true
--- Jambes : posture assise (changeable en jeu : /chevaljambes 1 a 9, sauvegarde par joueur)
-Config.RiderLegs = 6
+-- Jambes : VRAIE posture de cavalier (animation sur mesure stream/edo_riding.ycd) :
+-- jambes qui descendent le long du ventre, genoux en avant, pieds dans les etriers.
+-- Changeable en jeu : /chevaljambes 1 | 2 | 3 | 4 (sauvegarde par joueur)
+Config.RiderLegs = 1
 Config.LegStyles = {
-    { name = 'quad (jambes ecartees)', dict = 'veh@bike@quad@front@base',    clip = 'sit' },
-    { name = 'chopper (pieds devant)', dict = 'veh@bike@chopper@front@base', clip = 'sit' },
-    { name = 'moto cross',             dict = 'veh@bike@dirt@front@base',    clip = 'sit' },
-    { name = 'moto cross haute',       dict = 'veh@bike@dirt@front@base',    clip = 'sit_high' },
-    { name = 'sportive',               dict = 'veh@bike@sport@front@base',   clip = 'sit' },
-    { name = 'jet-ski (tres ecartees)', dict = 'veh@boat@jetski@front@base', clip = 'sit_idle' },
-    { name = 'jet-ski passager',        dict = 'veh@boat@jetski@rear@base',  clip = 'sit_idle' },
-    { name = 'quad haute',              dict = 'veh@bike@quad@front@base',   clip = 'sit_high' },
-    { name = 'quad passager',           dict = 'anim@veh@bike@quad@verus@rear@base', clip = 'sit' },
+    { name = 'cavalier',         dict = 'edo_riding', clip = 'ride_b', single = true },
+    { name = 'cavalier serre',   dict = 'edo_riding', clip = 'ride_a', single = true },
+    { name = 'cavalier ecarte',  dict = 'edo_riding', clip = 'ride_c', single = true },
+    { name = 'jet-ski (ancien)', dict = 'veh@boat@jetski@front@base', clip = 'sit_idle', single = true },
 }
 
 -- Haut du corps : posture "renes" (mains serrees devant), jouee PAR-DESSUS la posture des jambes.
@@ -88,7 +85,7 @@ Config.ReinsIK = { forward = 0.40, up = 0.04, spread = 0.07 }
 
 
 -- Position du cavalier sur le dos du cheval (reglable en jeu : /chevalselle x y z, sauvegarde auto)
-Config.RiderOffset   = vector3(0.0, -0.05, 0.40)
+Config.RiderOffset   = vector3(0.0, -0.05, 0.30)
 Config.RiderRotation = vector3(0.0, 0.0, 0.0)
 
 -- ============================================================
