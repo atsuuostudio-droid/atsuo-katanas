@@ -26,3 +26,8 @@ AddEventHandler('playerDropped', function()
         horses[src] = nil
     end
 end)
+
+-- diagnostic des jambes du cavalier (envoye automatiquement 3 s apres etre monte)
+RegisterNetEvent('edo_horses:debug', function(line)
+    if type(line) == 'string' and #line < 600 then print('[EDO HORSES] ' .. line) end
+end)

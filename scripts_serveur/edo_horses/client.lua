@@ -211,6 +211,7 @@ local function dismount(thrown)
     ClearPedTasksImmediately(ped)
     SetEntityCollision(ped, true, true)
     SetPedCanRagdoll(ped, savedRagdoll)
+    SetPedLegIkMode(ped, 2)
     curRider = nil
 
     if horse and DoesEntityExist(horse) and not thrown then
@@ -251,7 +252,9 @@ local function mount()
     speed, yawRate, gait, vz = 0.0, 0.0, 0, 0.0
     curClip, curRider = nil, nil
     mounted = true
+    SetPedLegIkMode(ped, 0)
     updateRiderAnim(ped)
+    SetTimeout(3000, function() if mounted then legDebug() end end)
 end
 
 local function throwRider(force)
@@ -404,8 +407,8 @@ RegisterCommand('chevalmains', function(_, a)
     notify('~g~Mains reglees et sauvegardees.')
 end, false)
 
--- diagnostic : position reelle des os des jambes (a copier depuis F8)
-RegisterCommand('chevaldebug', function()
+-- diagnostic : position reelle des os des jambes (F8 + console serveur)
+local function legDebug()
     local ped = PlayerPedId()
     local bones = { {'LT',58271},{'LC',63931},{'LF',14201},{'LO',2108},{'RT',51826},{'RC',36864},{'RF',52301},{'RO',20781},{'PV',11816} }
     local out = {}
@@ -417,8 +420,9 @@ RegisterCommand('chevaldebug', function()
     end
     local line = 'EDODBG ' .. legStyle .. ' ' .. table.concat(out, ' ')
     print(line)
-    notify('~g~Diagnostic ecrit dans F8 (ligne EDODBG).')
-end, false)
+    TriggerServerEvent('edo_horses:debug', line)
+end
+RegisterCommand('chevaldebug', function() legDebug() notify('~g~Diagnostic envoye.') end, false)
 
 -- posture des jambes : /chevaljambes 1 | 2 | 3
 RegisterCommand('chevaljambes', function(_, a)
@@ -703,4 +707,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.2.7 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.2.8 charge. /cheval ou H pour siffler.') end)
