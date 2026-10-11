@@ -6,7 +6,7 @@ TEX='/home/claude/sakura/tex/'
 bpy.ops.wm.read_factory_settings(use_empty=True)
 # ---------------- lame procédurale (Kumo) ----------------
 from blade_params import *
-NS=170
+NS=130
 def section(s):
     """profil (f, y) côté +y, du tranchant au dos ; f = fraction de largeur"""
     T=ts(s); g=hi_depth(s)*HI_DEPTH*T
@@ -102,7 +102,7 @@ def lathe(name,prof,mat,n=64,tile=0.030,cap0=False,cap1=False,uvmode='cyl',plain
             f=bm.faces.new([rings[i][j],rings[i][j2],rings[i+1][j2],rings[i+1][j]])
             for l,(ii,jj) in zip(f.loops,[(i,j),(i,j+1),(i+1,j+1),(i+1,j)]):
                 if i in plain:
-                    l[uv].uv=(0.5+0.08*math.cos(2*math.pi*jj/n),0.5+0.08*math.sin(2*math.pi*jj/n)+0.01*ii)
+                    l[uv].uv=(0.05+0.03*math.cos(2*math.pi*jj/n),0.05+0.03*math.sin(2*math.pi*jj/n))
                 else: l[uv].uv=(jj/n*reps, arc[ii]/tile)
             if i in plain: f.material_index=1
     for cap,ring in ((cap0,0),(cap1,len(rings)-1)):
@@ -208,7 +208,7 @@ for i in range(NL):
             l[uv].uv=(jj/NC*reps, ii/NL*L/T_SAME)
 bm.normal_update(); ame=new_obj('ame',bm,[M_SAME])
 # ---------------- menuki (fleurs d'or) ----------------
-def flower(center,normal,up,rf,hgt,mat_uvc=(0.5,0.5)):
+def flower(center,normal,up,rf,hgt,mat_uvc=(0.05,0.05)):
     bm=bmesh.new(); uv=bm.loops.layers.uv.new('UVMap')
     side=normal.cross(up).normalized(); up=side.cross(normal).normalized()
     NPh=32; NR=5; petals=16
@@ -226,7 +226,7 @@ def flower(center,normal,up,rf,hgt,mat_uvc=(0.5,0.5)):
             ring.append(bm.verts.new(center+side*math.cos(ph)*R+up*math.sin(ph)*R+normal*hh))
         rings.append(ring)
     def uvof(v):
-        d=v.co-center; return (mat_uvc[0]+d.dot(side)/rf*0.10, mat_uvc[1]+d.dot(up)/rf*0.10)
+        d=v.co-center; return (mat_uvc[0]+d.dot(side)/rf*0.03, mat_uvc[1]+d.dot(up)/rf*0.03)
     faces=[]
     for j in range(NPh):
         faces.append(bm.faces.new([c,rings[0][j],rings[0][(j+1)%NPh]]))
@@ -269,52 +269,74 @@ def remap_planar(o,ry,rz,scale_uv):
     for poly in me.polygons:
         for li in poly.loop_indices:
             v=me.vertices[me.loops[li].vertex_index].co
-            uvl.data[li].uv=(0.5+v.y/ry*scale_uv,0.5+(v.z-zc(v.x))/rz*scale_uv)
+            uvl.data[li].uv=(0.05+v.y/ry*0.03,0.05+(v.z-zc(v.x))/rz*0.03)
 remap_planar(sp0,0.0172,0.0228,0.10); remap_planar(sp1,0.0172,0.0228,0.10)
-# ---------------- tsuba ----------------
-TRY,TRZ=0.0400,0.0430
+# ---------------- tsuba : disques de laque + bordure arrondie en RELIEF 3D ----------------
+from rim_params import TRY,TRZ,RING_W,HALF,BAND_W,REPS,AMP,D0
+RIMH=np.load(TEX+'rim_h.npy')
+M_RIM=mk_mat('rim','rim',0.30,0.85,1.0)
+xm=X_TSUBA0+TSUBA_T/2; zm=zc(xm)
+def h_rim(u,v):
+    hh,ww=RIMH.shape; x=(u%1.0)*ww-0.5; y=min(max(v*hh-0.5,0),hh-1.001)
+    x0=int(math.floor(x)); y0=int(y); fx=x-x0; fy=y-y0; x0%=ww; x1=(x0+1)%ww
+    return (RIMH[y0,x0]*(1-fx)+RIMH[y0,x1]*fx)*(1-fy)+(RIMH[y0+1,x0]*(1-fx)+RIMH[y0+1,x1]*fx)*fy
+def cross(s):
+    if s<=RING_W: return (-HALF, D0+s, -1.0, 0.0)
+    if s<=RING_W+math.pi*HALF:
+        a_=(s-RING_W)/HALF; return (-HALF*math.cos(a_), -HALF+HALF*math.sin(a_), -math.cos(a_), math.sin(a_))
+    s2=s-RING_W-math.pi*HALF; return (HALF, -HALF-s2, 1.0, 0.0)
+def orient(o,want):
+    """retourne toutes les faces si leur normale moyenne ne suit pas la direction voulue"""
+    me=o.data; tot=0.0
+    for poly in me.polygons: tot+=poly.normal.dot(want(poly.center))
+    if tot<0:
+        bm_=bmesh.new(); bm_.from_mesh(me); bmesh.ops.reverse_faces(bm_,faces=bm_.faces[:]); bm_.to_mesh(me); bm_.free(); me.update()
+    return tot<0
+NA=448
+SS_=[RING_W*i/4 for i in range(4)]+[RING_W+math.pi*HALF*i/12 for i in range(12)]+[RING_W+math.pi*HALF+RING_W*i/4 for i in range(5)]
 bm=bmesh.new(); uv=bm.loops.layers.uv.new('UVMap')
-NP=96
-prof=[(0.0,0.5),(0.12,0.5),(0.24,0.5),(0.40,0.5),(0.55,0.5),(0.70,0.5),(0.85,0.5),(0.90,0.5),(0.905,0.56),(0.93,0.62),(0.965,0.64),(0.99,0.60),(1.0,0.5)]
-def tpos(rf,side,ph,thick):
-    xm=X_TSUBA0+TSUBA_T/2
-    x=xm+side*thick*TSUBA_T
-    return Vector((x,TRY*rf*math.sin(ph),zc(xm)+TRZ*rf*math.cos(ph)))
-faces_info=[]
-grid={}
+grid=[]
+for i in range(NA):
+    th=2*math.pi*i/NA; st,ct=math.sin(th),math.cos(th); u=th/(2*math.pi)*REPS
+    col_=[]
+    for s in SS_:
+        dx,dd,nx,nr=cross(s); v=s/BAND_W
+        disp=AMP*h_rim(u,v)
+        col_.append(bm.verts.new((xm+dx+nx*disp,(TRY+dd+nr*disp)*st,zm+(TRZ+dd+nr*disp)*ct)))
+    grid.append(col_)
+for i in range(NA):
+    i2=(i+1)%NA; u0=i/NA*REPS; u1=(i+1)/NA*REPS
+    for j in range(len(SS_)-1):
+        f=bm.faces.new([grid[i][j],grid[i2][j],grid[i2][j+1],grid[i][j+1]])
+        v0=1-SS_[j]/BAND_W; v1=1-SS_[j+1]/BAND_W
+        for l,uvv in zip(f.loops,[(u0,v0),(u1,v0),(u1,v1),(u0,v1)]): l[uv].uv=uvv
+bm.normal_update(); bordure=new_obj('tsuba_bordure',bm,[M_RIM])
+def want_rim(c):
+    r=Vector((0,c.y,c.z-zm))
+    if abs(c.x-xm)>HALF*0.98 and r.length<min(TRY,TRZ)+D0+RING_W*0.9: return Vector((math.copysign(1,c.x-xm),0,0))
+    return Vector((c.x-xm,0,0))*0.0+r.normalized()+Vector((c.x-xm,0,0))*(1.0/HALF)
+print('bordure retournee', orient(bordure,want_rim))
+# disques (faces du tsuba)
+NP=448; QS=[0.0,1.0]
+disks=[]
 for side in (-1,1):
-    for ri,(rf,th) in enumerate(prof):
-        if rf==0: grid[(side,ri,0)]=bm.verts.new(tpos(0,side,0,th)); continue
-        for j in range(NP): grid[(side,ri,j)]=bm.verts.new(tpos(rf,side,2*math.pi*j/NP,th))
-def fuv(rf,ph,side):
-    return (0.5+side*0.5*rf*math.sin(ph), 0.5+0.5*rf*math.cos(ph))
-for side in (-1,1):
-    for ri in range(len(prof)-1):
-        r0,r1=prof[ri][0],prof[ri+1][0]
+    bm=bmesh.new(); uv=bm.loops.layers.uv.new('UVMap')
+    x=xm+side*HALF
+    rings=[]
+    for q in QS:
+        if q==0: rings.append([bm.verts.new((x,0,zm))]); continue
+        rings.append([bm.verts.new((x,(TRY+D0)*q*math.sin(2*math.pi*j/NP),zm+(TRZ+D0)*q*math.cos(2*math.pi*j/NP))) for j in range(NP)])
+    def fuv2(q,j): rf=q*(TRY+D0)/TRY; ph=2*math.pi*j/NP; return (0.5+side*0.5*rf*math.sin(ph),0.5+0.5*rf*math.cos(ph))
+    for ri in range(len(QS)-1):
         for j in range(NP):
-            j2=(j+1)%NP; p0=2*math.pi*j/NP; p1=2*math.pi*(j+1)/NP
-            if r0==0:
-                vs=[grid[(side,0,0)],grid[(side,1,j)],grid[(side,1,j2)]]; uvs=[fuv(0,0,side),fuv(r1,p0,side),fuv(r1,p1,side)]
-            else:
-                vs=[grid[(side,ri,j)],grid[(side,ri+1,j)],grid[(side,ri+1,j2)],grid[(side,ri,j2)]]
-                uvs=[fuv(r0,p0,side),fuv(r1,p0,side),fuv(r1,p1,side),fuv(r0,p1,side)]
-            if side==-1: vs=vs[::-1]; uvs=uvs[::-1]
+            j2=(j+1)%NP
+            if ri==0: vs=[rings[0][0],rings[1][j],rings[1][j2]]; uvs=[(0.5,0.5),fuv2(QS[1],j),fuv2(QS[1],j+1)]
+            else: vs=[rings[ri][j],rings[ri+1][j],rings[ri+1][j2],rings[ri][j2]]; uvs=[fuv2(QS[ri],j),fuv2(QS[ri+1],j),fuv2(QS[ri+1],j+1),fuv2(QS[ri],j+1)]
             f=bm.faces.new(vs)
             for l,u_ in zip(f.loops,uvs): l[uv].uv=u_
-# tranche (bord) : texture kin cylindrique
-last=len(prof)-1
-circ=2*math.pi*math.sqrt((TRY**2+TRZ**2)/2); reps=round(circ/0.03)
-for j in range(NP):
-    j2=(j+1)%NP
-    vs=[grid[(-1,last,j)],grid[(1,last,j)],grid[(1,last,j2)],grid[(-1,last,j2)]]
-    f=bm.faces.new(vs[::-1])
-    for l,u_ in zip(f.loops,[(j2/NP*reps,0),(j2/NP*reps,0.2),(j/NP*reps,0.2),(j/NP*reps,0)]): l[uv].uv=u_
-bm.normal_update()
-tsuba=new_obj('tsuba',bm,[M_TSUBA,M_KIN])
-# faces de tranche -> matériau kin
-for p in tsuba.data.polygons:
-    xs=[tsuba.data.vertices[v].co.x for v in p.vertices]
-    if len(p.vertices)==4 and max(xs)-min(xs)>TSUBA_T*0.9: p.material_index=1
+    bm.normal_update(); o=new_obj('tsuba_face%d'%side,bm,[M_TSUBA])
+    orient(o,lambda c,side=side: Vector((side,0,0))); disks.append(o)
+tsuba_parts=[bordure]+disks
 # ---------------- habaki ----------------
 def hab_section(x,grow):
     pts=[]
@@ -345,7 +367,7 @@ for ring,flip in ((rings[0],True),(rings[-1],False)):
         for l in f.loops: l[uv].uv=(0.5+l.vert.co.y/0.006*0.05,0.5+(l.vert.co.z-0.0545)/0.022*0.09)
 bm.normal_update(); habaki=new_obj('habaki',bm,[M_TSUBA])
 # ---------------- assemblage ----------------
-parts=[tresse,ame,fuchi,kas,sp0,sp1,tsuba,habaki]+objs_menuki
+parts=[tresse,ame,fuchi,kas,sp0,sp1,habaki]+objs_menuki
 for o in parts:
     o.data.shade_smooth()
 bpy.ops.object.select_all(action='DESELECT')
@@ -359,6 +381,13 @@ bpy.context.view_layer.objects.active=lame; bpy.ops.object.join()
 k=bpy.context.view_layer.objects.active; k.name='katana_sakura'; k.data.name='katana_sakura'
 from fix_normals import fix
 print('FACES RETOURNEES', fix(k))
+# tsuba ajouté APRÈS fix() : ses faces sont orientées à la construction (bordure déplacée en relief)
+for o in tsuba_parts:
+    o.data.shade_smooth(); o.data.set_sharp_from_angle(angle=math.radians(50))
+bpy.ops.object.select_all(action='DESELECT')
+for o in tsuba_parts: o.select_set(True)
+k.select_set(True); bpy.context.view_layer.objects.active=k; bpy.ops.object.join()
+k=bpy.context.view_layer.objects.active
 # nettoyer matériaux / images inutiles
 for img in bpy.data.images: 
     if img.users==0: bpy.data.images.remove(img)

@@ -8,7 +8,7 @@ obj=bpy.data.objects['katana_sakura']
 # --- images DDS ---
 def dds(name,color):
     im=bpy.data.images.load(O+name); im.colorspace_settings.name='sRGB' if color else 'Non-Color'; return im
-mapping={'lame':'sakura_lame','ito':'sakura_ito','same':'sakura_same','or':'sakura_or','tsuba':'sakura_tsuba'}
+mapping={'lame':'sakura_lame','ito':'sakura_ito','same':'sakura_same','or':'sakura_or','tsuba':'sakura_tsuba','rim':'sakura_rim'}
 for m in obj.data.materials:
     pre=mapping[m.name]
     nt=m.node_tree; N=nt.nodes

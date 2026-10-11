@@ -127,12 +127,14 @@ gcol=gcol*(1+0.04*noise[...,None])*shade[...,None]
 gcol=gcol*(1-0.55*cs[...,None])
 col=bg*(1-gs[...,None])+gcol*gs[...,None]
 # légère usure dorée dans le fond (rehauts)
-from sakura_draw import flowers as sk_flowers
+from sakura_draw2 import Canvas
 SC=OUT/S
-items=[(c_[0]*SC,c_[1]*SC,r_*SC*0.95,rng.uniform(0,6.28),int(rng.integers(3))) for (c_,r_) in flowers]
-frgb,fa,fh=sk_flowers(OUT,items)
-nrm=normal_from_height(hs*(1-fa)+(0.30+0.55*fh)*fa,9.0)
-col=col*(1-fa[...,None])+frgb*fa[...,None]
+cvs=Canvas(OUT,wrap=True,bg=col.astype(np.float32)); cvs.h[:]=hs
+for (c_,r_) in flowers:
+    cvs.flower(c_[0]*SC,c_[1]*SC,r_*SC*1.0,rng.uniform(0,6.28),int(rng.integers(3)),squash=rng.uniform(0.7,1.0),tilt=rng.uniform(0,3),rng=rng)
+fa=cvs.mask
+nrm=normal_from_height(cvs.h,9.0)
+col=cvs.rgb
 save_rgb('/home/claude/sakura/tex/or_d.png',col)
 save_rgb('/home/claude/sakura/tex/or_n.png',nrm)
 spec=0.42*(1-gs)+0.95*gs - 0.4*cs*gs + 0.08*ns*(1-gs)

@@ -11,7 +11,7 @@ from sollumz.ydr.shader_materials import create_shader
 def setp(mn,i,f,fr):
     N=bpy.data.materials[mn].node_tree.nodes
     N['specularIntensityMult'].set_float(i); N['specularFalloffMult'].set_float(f); N['specularFresnel'].set_float(fr)
-setp('lame_normal_spec',2.5,400.0,0.97); setp('or_normal_spec',1.6,200.0,0.90); setp('tsuba_normal_spec',1.6,200.0,0.90)
+setp('lame_normal_spec',2.5,400.0,0.97); setp('or_normal_spec',1.6,200.0,0.90); setp('tsuba_normal_spec',1.8,250.0,0.90); setp('rim_normal_spec',1.8,220.0,0.92)
 if EMISSIVE>0:
     old=bpy.data.materials['lame_normal_spec']; O=old.node_tree.nodes
     new=create_shader('normal_spec_emissive.sps'); N=new.node_tree.nodes

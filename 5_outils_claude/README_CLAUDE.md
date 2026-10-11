@@ -54,3 +54,7 @@ Scripts dans `sakura/` (chemins `/home/claude/sakura/...`, maillage de lame NS=1
   Couches : acier noir violacé, brume rose, éclats diagonaux, hamon en vagues + liserés, pétales flous / traînées / pétales nets / fleurs, dos + gorge.
 - `sakura_draw.py` : fleurs de cerisier 5 pétales échancrés (couleur + relief) pour tsuba, habaki, fuchi/kashira.
 - Lueur : `normal_spec_emissive`, emissiveMultiplier 1.5 (comme le Kin).
+- **Tsuba v2 (demande : identique à la photo)** : laque noire + fleurs peintes au naturel (`sakura_draw2.py`, sans contour or),
+  `tex_tsuba_face.py` (2048², centre = décor du habaki, coins = or uni pour seppa / menuki / bagues),
+  bordure arrondie en **vrai relief 3D** : `tex_rim.py` → `rim_h.npy` déplace la géométrie (`rim_params.py`, AMP 1,3 mm,
+  448 × 20 quads) ; le tsuba est ajouté **après** `fix()` (faces orientées à la construction). TSUBA_T = 8 mm. ~52 k triangles.
