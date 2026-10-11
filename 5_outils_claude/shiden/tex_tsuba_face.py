@@ -40,7 +40,7 @@ for k in range(10):
     cv.bud(x,y,rng.uniform(0.022,0.032)*RR,rng.uniform(0,6.28),int(rng.integers(3)))
 # ---- centre : décor du habaki (bronze sombre, fleurs, feuilles d'or) ----
 cz=np.clip((0.235-rr)*S/2,0,1)
-bronze=C(120,118,130)[None,None]*(1+0.12*lac[...,None])
+bronze=C(14,11,18)[None,None]*(1+0.12*lac[...,None])
 cv.rgb=cv.rgb*(1-cz[...,None])+bronze*cz[...,None]; cv.spec=cv.spec*(1-cz)+0.7*cz; cv.h*= (1-cz)
 for k in range(12):
     a=rng.uniform(0,6.28); rn=rng.uniform(0.02,0.19); x,y=P(rn,a)
@@ -55,6 +55,8 @@ for (ys,xs) in ((slice(0,q),slice(0,q)),(slice(0,q),slice(S-q,S)),(slice(S-q,S),
 gn=cv2.GaussianBlur(np.random.default_rng(9).normal(0,1,(S,S)).astype(np.float32),(0,0),3)
 goldc=C(170,170,184)[None,None]*(1+0.04*gn[...,None])
 cv.rgb=cv.rgb*(1-corner[...,None])+goldc*corner[...,None]; cv.spec=cv.spec*(1-corner)+0.95*corner; cv.h*=(1-corner)
+# coin bas-droit = laque noire (seppa)
+cv.rgb[S-q:S,S-q:S]=C(12,10,14); cv.spec[S-q:S,S-q:S]=0.85
 # ---- sorties ----
 nrm=normal_from_height(cv2.GaussianBlur(cv.h,(0,0),1.0),6.0,wrap=False)
 save_rgb('/home/claude/shiden/tex/tsuba_d.png',np.clip(cv.rgb,0,1))
