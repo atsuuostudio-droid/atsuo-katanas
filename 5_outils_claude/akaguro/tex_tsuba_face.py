@@ -46,12 +46,7 @@ for k in range(40):
 # ---- centre : décor du habaki (fer noirci + laiton gravé) ----
 cz=np.clip((0.235-rr)*S/2,0,1)
 cv.rgb=cv.rgb*(1-cz[...,None])+bg*cz[...,None]; cv.h*=(1-cz)
-for k in range(3):
-    a0=k*2.1; pts=[P(0.03+0.16*t,a0+t*1.6) for t in np.linspace(0,1,20)]
-    cv.branch(pts,5,2,BRASS)
-    for i in range(2,20,3):
-        x,y=pts[i]; cv.gold_leaf(x,y,0.035*RR,0.012*RR,a0+i*0.3+rng.uniform(-1,1),0.1)
-bird(*P(0.12,4.4),0.05*RR,0.2); bird(*P(0.15,1.2),0.04*RR,-0.3)
+cv.rgb=cv.rgb*(1-cz[...,None])+C(8,7,9)*cz[...,None]; cv.spec=cv.spec*(1-cz)+0.9*cz   # habaki : noir uni
 # ---- coins : laiton uni vieilli ----
 corner=np.zeros((S,S),np.float32); q=int(S*0.11)
 for (ys,xs) in ((slice(0,q),slice(0,q)),(slice(0,q),slice(S-q,S)),(slice(S-q,S),slice(0,q)),(slice(S-q,S),slice(S-q,S))): corner[ys,xs]=1
