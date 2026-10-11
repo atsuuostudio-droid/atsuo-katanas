@@ -26,7 +26,7 @@ def lerp(a,b,t): return a+(b-a)*t
 def C(r,g,b): return np.array([r,g,b],np.float32)/255
 # ---------------- fond : acier noir violacé poli ----------------
 streak=gnoise(mm(9),mm(0.06),1)
-base=lerp(C(10,10,13),C(24,24,30),np.clip(0.5+0.25*streak,0,1)[...,None])
+base=lerp(C(6,6,8),C(11,11,14),np.clip(0.5+0.25*streak,0,1)[...,None])
 col=np.broadcast_to(base,(GH,GW,3)).copy()
 # ---------------- brume rose (nébuleuse) ----------------
 n1=gnoise(mm(14),mm(1.6),2); n2=gnoise(mm(4),mm(0.6),3); n3=gnoise(mm(1.2),mm(0.25),4)
@@ -35,13 +35,13 @@ mist=np.clip(0.45*n1+0.30*n2+0.12*n3+0.12,0,None)**1.3*band*0.55
 # plus dense vers la pointe et près du habaki
 mist*=1.0+0.6*np.exp(-((s-LB)/0.09)**2)+0.3*np.exp(-(s/0.05)**2)
 mist=np.clip(mist,0,0.85)
-col=lerp(col,C(44,44,52)[None,None],(mist*0.5)[...,None])
+col=lerp(col,C(12,12,15)[None,None],(mist*0.3)[...,None])
 # reflets diagonaux (éclats de lumière rose)
 for k in range(9):
     x0=rng.uniform(0.03,LB-0.03)/PX; ang=math.radians(rng.uniform(55,75)); wdt=mm(rng.uniform(2,6))
     d=((xx-x0)*math.sin(ang)+(yy-GH/2)*math.cos(ang))
     g=np.exp(-(d/wdt)**2)*np.clip(gnoise(mm(3),mm(3),10+k)*0.5+0.6,0,1)*band*rng.uniform(0.15,0.3)
-    col=lerp(col,C(120,122,132)[None,None],np.clip(g,0,1)[...,None])
+    col=lerp(col,C(10,10,13)[None,None],np.clip(g,0,1)[...,None])
 # ---------------- ligne de trempe en vagues (hamon) ----------------
 ph=rng.uniform(0,6.28,4)
 hb=(0.215+0.028*np.sin(2*np.pi*sc/0.031+ph[0])+0.014*np.sin(2*np.pi*sc/0.0127+ph[1])
@@ -50,20 +50,20 @@ hb=hb+0.010*cv2.GaussianBlur(np.random.default_rng(5).normal(0,1,(1,GW)).astype(
 hbm=hb[None,:]
 # zone du tranchant : rose -> blanc rosé au fil
 t_edge=np.clip(fl/np.maximum(hbm,1e-3),0,1)
-edge_col=lerp(C(196,198,206)[None,None],C(30,30,36)[None,None],(t_edge**0.22)[...,None])
+edge_col=lerp(C(150,152,160)[None,None],C(7,7,9)[None,None],(t_edge**0.07)[...,None])
 edge_col=edge_col*(1+0.05*streak[...,None])
 ez=np.clip((hbm-fl)*GH*wcol[None,:]/W0/2.0+0.5,0,1)          # bord net (≈2 px)
 col=lerp(col,edge_col,ez[...,None])
 # lueur au-dessus de la ligne + vagues secondaires (liserés blanc rosé)
 glow_above=np.exp(-np.clip(fl-hbm,0,None)/0.035)*(1-ez)
-col=lerp(col,C(40,40,48)[None,None],(glow_above*0.30)[...,None])
+col=lerp(col,C(8,8,10)[None,None],(glow_above*0.30)[...,None])
 waves=np.zeros((GH,GW),np.float32)
 for k,(off,amp,per,wid_mm,a) in enumerate([(0.0,0.0,1,0.16,1.0),(0.06,0.03,0.021,0.14,0.95),(0.16,0.045,0.043,0.12,0.8),(0.22,0.03,0.019,0.10,0.6)]):
     yk=hb+off+amp*np.sin(2*np.pi*sc/per+ph[3]*k)
     dk=np.abs(fl-yk[None,:])*wcol[None,:]/PX
     waves=np.maximum(waves,np.exp(-(dk/mm(wid_mm))**2)*a)
 wglow=cv2.GaussianBlur(waves,(0,0),mm(0.35))
-col=lerp(col,C(78,80,90)[None,None],np.clip(waves+0.6*wglow,0,1)[...,None])
+col=lerp(col,C(14,14,17)[None,None],np.clip(waves+0.6*wglow,0,1)[...,None])
 # ---------------- pétales et fleurs de cerisier ----------------
 alpha_all=np.zeros((GH,GW),np.float32)
 PETAL_PINKS=[(C(250,196,222),C(226,92,160)),(C(255,226,238),C(238,138,188)),(C(246,168,206),C(208,58,138)),(C(255,240,246),C(244,170,206))]
@@ -159,24 +159,24 @@ pg=cv2.GaussianBlur(alpha_all,(0,0),mm(0.9))
 col=lerp(col,C(40,40,48)[None,None],(np.clip(pg-alpha_all,0,1)*0.55)[...,None])
 # ---------------- shinogi-ji (dos) + gorge ----------------
 shin=np.clip((fl-F_SHIN)*wcol[None,:]/PX/1.5+0.5,0,1)
-shin_col=lerp(C(6,6,9),C(18,18,24),np.clip(0.5+0.3*streak,0,1)[...,None])
+shin_col=lerp(C(4,4,6),C(9,9,12),np.clip(0.5+0.3*streak,0,1)[...,None])
 # reflet rose étiré le long du dos
 refl=np.exp(-((fl-0.83)/0.035)**2)*np.clip(0.5+0.5*gnoise(mm(25),mm(2),20),0,1)*0.35
-shin_col=lerp(shin_col,C(70,72,82)[None,None],refl[...,None])
+shin_col=lerp(shin_col,C(10,10,13)[None,None],refl[...,None])
 col=lerp(col,shin_col,shin[...,None])
 hid=np.array([hi_depth(x) for x in sc],np.float32)[None,:]
 gv=((fl>F_HI0)&(fl<F_HI1)).astype(np.float32)*hid
 gedge=(np.exp(-((fl-F_HI0)*wcol[None,:]/PX/mm(0.12))**2)+np.exp(-((fl-F_HI1)*wcol[None,:]/PX/mm(0.12))**2))*hid
 col=col*(1-0.35*gv[...,None])
-col=lerp(col,C(90,92,100)[None,None],(gedge*0.5)[...,None])
+col=lerp(col,C(18,18,22)[None,None],(gedge*0.5)[...,None])
 # ligne du shinogi (arête) : fin liseré clair
 sl_=np.exp(-((fl-F_SHIN)*wcol[None,:]/PX/mm(0.08))**2)
-col=lerp(col,C(80,82,92)[None,None],(sl_*0.5)[...,None])
+col=lerp(col,C(16,16,20)[None,None],(sl_*0.5)[...,None])
 # kissaki plus lumineux
 kis=np.clip((s-(LB-KL-0.01))/0.03,0,1)*(1-shin)*0.35
-col=lerp(col,C(36,36,42)[None,None],kis[...,None])
+col=lerp(col,C(8,8,10)[None,None],kis[...,None])
 # hors lame (au-dessus du dos à la pointe) : recopier la dernière ligne valide (évite les bavures)
-col=np.where(inb[...,None]>0,col,C(10,10,13)[None,None])
+col=np.where(inb[...,None]>0,col,C(6,6,8)[None,None])
 # ---------------- brillance ----------------
 spec=0.80+0.15*ez+0.10*waves-0.05*alpha_all+0.1*shin
 # ---------------- rééchantillonnage vers la vue UV (v = fraction locale) ----------------
