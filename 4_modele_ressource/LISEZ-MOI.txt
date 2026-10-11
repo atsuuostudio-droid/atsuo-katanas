@@ -1,0 +1,16 @@
+MODELE DE RESSOURCE ARME (exemple : Katana Kin, qui marche en jeu)
+Pour une nouvelle arme (ex. Katana Sakura) - Claude le fait pour toi, sinon :
+1. Copier atsuo_katana_kin_EXEMPLE -> atsuo_katana_sakura
+2. Dans les 4 fichiers de meta/, client.lua et fxmanifest.lua :
+   remplacer KATANA_KIN -> KATANA_SAKURA, katana_kin -> katana_sakura, Katana Kin -> Katana Sakura
+3. meta/weapons.meta : OrderNumber 192 -> numero slot suivant (2 fois), 422 -> order suivant (1 fois)
+4. stream/ : mettre w_me_katana_sakura.ydr (supprimer A_METTRE_ICI.txt)
+5. Icone : WEAPON_KATANA_SAKURA.png dans ox_inventory/web/images/
+
+Bloc ox_inventory/data/weapons.lua (apres le dernier katana) :
+		['WEAPON_KATANA_SAKURA'] = {
+			label = 'Katana Sakura',
+			description = '...',
+			weight = 1500,
+			durability = 0.1,
+		},

@@ -1,0 +1,14 @@
+On reprend mes katanas Atsuo (serveur FiveM ESX + ox_inventory).
+
+Je t'envoie le kit Atsuo_Katanas_KIT.zip : lis 1_PROCEDURE_Katana_Atsuo.docx et 5_outils_claude/README_CLAUDE.md avant de commencer, et suis exactement la même méthode que pour le Katana Kin :
+- je garde la lame (celle du Kin, ou celle d'un .glb Tripo que je t'envoie), tu refais toute la monture en 3D d'après mon image,
+- tu me renvoies le .blend déjà converti Sollumz, déjà placé en main avec katana_comme_machette.py v3, avec ses .dds,
+- plus la ressource atsuo_katana_<nom>, l'icône et le bloc ox_inventory.
+
+Nouvelle arme : Katana <NOM>
+Slot / order : 193 / 423 (voir 6_REGISTRE_ARMES.txt pour les suivants)
+Lame : A (celle du Kin) ou B (je t'envoie un .glb Tripo)
+Lueur de la lame : oui/non, couleur :
+Image de référence : (jointe)
+
+Guide-moi en français, étape par étape, avec les noms exacts des boutons.
