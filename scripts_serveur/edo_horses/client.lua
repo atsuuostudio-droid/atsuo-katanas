@@ -161,7 +161,8 @@ local function updateRiderAnim(ped)
         if yawRate > 45.0 then key = 'leanL' elseif yawRate < -45.0 then key = 'leanR' end
     end
     local clip = Config.RiderAnim[key] or 'sit'
-    if clip == 'sit' then clip = Config.LegStyles[legStyle].clip end
+    local ls = Config.LegStyles[legStyle]
+    if clip == 'sit' or ls.dict:find('jetski') then clip = ls.clip end
     local changed = false
     local dict = legDict()
     if clip ~= curRider or not IsEntityPlayingAnim(ped, dict, clip, 3) then
@@ -686,4 +687,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.1.5 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.1.6 charge. /cheval ou H pour siffler.') end)

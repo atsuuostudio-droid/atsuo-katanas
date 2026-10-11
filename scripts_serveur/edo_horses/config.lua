@@ -63,7 +63,7 @@ Config.TurnAnimThreshold = 40.0   -- vitesse de rotation (deg/s) a partir de laq
 Config.RiderAnim = { idle = 'sit', walk = 'sit', trot = 'sit', canter = 'sit_fast', gallop = 'sit_fast',
                      leanL = 'lean_l_slow', leanR = 'lean_r_slow' }
 Config.RiderLean = true
--- Jambes : posture assise (changeable en jeu : /chevaljambes 1 a 5, sauvegarde par joueur)
+-- Jambes : posture assise (changeable en jeu : /chevaljambes 1 a 9, sauvegarde par joueur)
 Config.RiderLegs = 1
 Config.LegStyles = {
     { name = 'quad (jambes ecartees)', dict = 'veh@bike@quad@front@base',    clip = 'sit' },
@@ -71,6 +71,10 @@ Config.LegStyles = {
     { name = 'moto cross',             dict = 'veh@bike@dirt@front@base',    clip = 'sit' },
     { name = 'moto cross haute',       dict = 'veh@bike@dirt@front@base',    clip = 'sit_high' },
     { name = 'sportive',               dict = 'veh@bike@sport@front@base',   clip = 'sit' },
+    { name = 'jet-ski (tres ecartees)', dict = 'veh@boat@jetski@front@base', clip = 'sit_idle' },
+    { name = 'jet-ski passager',        dict = 'veh@boat@jetski@rear@base',  clip = 'sit_idle' },
+    { name = 'quad haute',              dict = 'veh@bike@quad@front@base',   clip = 'sit_high' },
+    { name = 'quad passager',           dict = 'anim@veh@bike@quad@verus@rear@base', clip = 'sit' },
 }
 
 -- Haut du corps : posture "renes" (mains serrees devant), jouee PAR-DESSUS la posture des jambes.
