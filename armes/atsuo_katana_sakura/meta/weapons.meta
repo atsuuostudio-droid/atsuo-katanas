@@ -5,7 +5,7 @@
     <Item>
       <WeaponSlots>
         <Item>
-          <OrderNumber value="194" />
+          <OrderNumber value="251" />
           <Entry>SLOT_KATANA_SAKURA</Entry>
         </Item>
       </WeaponSlots>
@@ -13,7 +13,7 @@
     <Item>
       <WeaponSlots>
         <Item>
-          <OrderNumber value="194" />
+          <OrderNumber value="251" />
           <Entry>SLOT_KATANA_SAKURA</Entry>
         </Item>
       </WeaponSlots>
@@ -22,7 +22,7 @@
   <SlotBestOrder>
     <WeaponSlots>
       <Item>
-        <OrderNumber value="424" />
+        <OrderNumber value="481" />
         <Entry>SLOT_KATANA_SAKURA</Entry>
       </Item>
     </WeaponSlots>

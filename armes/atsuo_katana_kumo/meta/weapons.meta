@@ -5,7 +5,7 @@
     <Item>
       <WeaponSlots>
         <Item>
-          <OrderNumber value="193" />
+          <OrderNumber value="250" />
           <Entry>SLOT_KATANA_KUMO</Entry>
         </Item>
       </WeaponSlots>
@@ -13,7 +13,7 @@
     <Item>
       <WeaponSlots>
         <Item>
-          <OrderNumber value="193" />
+          <OrderNumber value="250" />
           <Entry>SLOT_KATANA_KUMO</Entry>
         </Item>
       </WeaponSlots>
@@ -22,7 +22,7 @@
   <SlotBestOrder>
     <WeaponSlots>
       <Item>
-        <OrderNumber value="423" />
+        <OrderNumber value="480" />
         <Entry>SLOT_KATANA_KUMO</Entry>
       </Item>
     </WeaponSlots>
