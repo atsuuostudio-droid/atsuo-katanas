@@ -13,7 +13,7 @@ for k in range(40):
     m=np.zeros((GH,GW),np.float32); cv2.ellipse(m,(int(x),int(y)),(int(rr*1.6),int(rr)),rng.uniform(0,180),0,360,1.0,-1,cv2.LINE_AA)
     H-=cv2.GaussianBlur(m,(0,0),rr*0.4)*0.05
 H=H+np.roll(H,GW//2,axis=1)*0 # (raccord : bruit indépendant, tuile répétée 4 fois)
-c,nrm8,spec=render_iron(H,PXMM*1.6,base=(26,26,30),hi=(100,100,108),lo=(5,5,7),nstrength=1.1)
+c,nrm8,spec=render_iron(H,PXMM*1.6,base=(9,9,10),hi=(20,20,22),lo=(3,3,4),nstrength=1.1)
 OW,OH=1024,512
 save_rgb('/home/claude/shikkoku/tex/rim_d.png',cv2.resize(c,(OW,OH),interpolation=cv2.INTER_AREA))
 save_rgb('/home/claude/shikkoku/tex/rim_n.png',cv2.resize(nrm8,(OW,OH),interpolation=cv2.INTER_AREA))

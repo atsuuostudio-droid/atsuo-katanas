@@ -35,20 +35,20 @@ for (bx,by,br) in beads:
 H+=0.22*bead
 # léger creux (gravure) au milieu des bandes de vague larges : accentue le mouvement
 pass
-c,nrm8,spec=render_iron(H,PXMM*1.0,base=(22,22,26),hi=(118,118,126),lo=(3,3,5),nstrength=1.0)
+c,nrm8,spec=render_iron(H,PXMM*1.0,base=(9,9,10),hi=(20,20,22),lo=(3,3,4),nstrength=1.0)
 # arêtes usées plus claires, fond des jours (parois) sombres
 wear=np.exp(-(dist/0.12)**2)*(mb>0)
-c=c+(np.array([96,96,104],np.float32)/255-c)*(0.35*wear)[...,None]
+c=c+(np.array([16,16,18],np.float32)/255-c)*(0.35*wear)[...,None]
 spec=np.clip(spec+0.20*wear,0,1)
 # perles : sommet poli
-c=c+(np.array([120,120,128],np.float32)/255-c)*(0.45*np.clip(bead-0.6,0,1)/0.4)[...,None]
+c=c+(np.array([18,18,20],np.float32)/255-c)*(0.45*np.clip(bead-0.6,0,1)/0.4)[...,None]
 # hors métal (jours) : couleur de la paroi pour éviter les bavures de mipmap
-wall=np.array([30,30,34],np.float32)/255
-c[mb==0]=wall; spec[mb==0]=0.6; nrm8[mb==0]=(128,128,255)
+wall=np.array([9,9,10],np.float32)/255
+c[mb==0]=wall; spec[mb==0]=0.3; nrm8[mb==0]=(128,128,255)
 # coins : fer sombre uni (seppa, parois, menuki)
 q=int(S*0.11); corner=np.zeros((S,S),bool)
 corner[:q,:q]=corner[:q,S-q:]=corner[S-q:,:q]=corner[S-q:,S-q:]=True
-c[corner]=np.array([40,40,46],np.float32)/255; spec[corner]=0.7; nrm8[corner]=(128,128,255)
+c[corner]=np.array([9,9,10],np.float32)/255; spec[corner]=0.3; nrm8[corner]=(128,128,255)
 save_rgb('/home/claude/shikkoku/tex/tsuba_d.png',c)
 save_rgb('/home/claude/shikkoku/tex/tsuba_n.png',nrm8)
 save_gray('/home/claude/shikkoku/tex/tsuba_s.png',spec)
