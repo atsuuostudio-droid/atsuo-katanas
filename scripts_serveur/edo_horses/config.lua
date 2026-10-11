@@ -73,8 +73,8 @@ Config.ArmStyles = {
     { name = 'renes', dict = 'anim@move_m@prisoner_cuffed', clip = 'idle', ik = true },
 }
 -- Point vise par les mains (par rapport a la selle) : avant / hauteur / ecart entre les mains.
--- Reglable en jeu : /chevalmains 0.37 0.09 (sauvegarde auto). Mettre Config.ReinsIK = false pour couper.
-Config.ReinsIK = { forward = 0.37, up = 0.09, spread = 0.07 }
+-- Reglable en jeu : /chevalmains 0.40 0.04 (sauvegarde auto). Mettre Config.ReinsIK = false pour couper.
+Config.ReinsIK = { forward = 0.40, up = 0.04, spread = 0.07 }
 
 -- Position du cavalier sur le dos du cheval (reglable en jeu : /chevalselle x y z, sauvegarde auto)
 Config.RiderOffset   = vector3(0.0, -0.05, 0.28)

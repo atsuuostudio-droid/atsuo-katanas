@@ -145,7 +145,7 @@ end
 local armStyle = 1   -- une seule posture : renes
 local handY, handZ = Config.ReinsIK and Config.ReinsIK.forward or 0.3, Config.ReinsIK and Config.ReinsIK.up or 0.2
 do
-    local kvp = GetResourceKvpString('edo_horses_hands3')
+    local kvp = GetResourceKvpString('edo_horses_hands4')
     if kvp then
         local a, b = kvp:match('([%-%d%.]+) ([%-%d%.]+)')
         if a then handY, handZ = tonumber(a), tonumber(b) end
@@ -395,7 +395,7 @@ RegisterCommand('chevalmains', function(_, a)
     local y, z = tonumber(a[1]), tonumber(a[2])
     if not z then return notify(('Mains : %.2f %.2f  (usage : /chevalmains avant hauteur)'):format(handY, handZ)) end
     handY, handZ = y, z
-    SetResourceKvp('edo_horses_hands3', ('%.3f %.3f'):format(y, z))
+    SetResourceKvp('edo_horses_hands4', ('%.3f %.3f'):format(y, z))
     print(('[edo_horses] Config.ReinsIK forward = %.3f, up = %.3f'):format(y, z))
     notify('~g~Mains reglees et sauvegardees.')
 end, false)
@@ -675,4 +675,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.1.1 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.1.2 charge. /cheval ou H pour siffler.') end)
