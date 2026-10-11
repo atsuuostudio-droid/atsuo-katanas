@@ -68,11 +68,16 @@ Config.RiderLean = true
 -- Changeable en jeu : /chevaljambes 1 | 2 | 3 | 4 (sauvegarde par joueur)
 Config.RiderLegs = 1
 Config.LegStyles = {
-    { name = 'cavalier',         dict = 'edo_cavalier', clip = 'ride_b', single = true },
-    { name = 'cavalier serre',   dict = 'edo_cavalier', clip = 'ride_a', single = true },
-    { name = 'cavalier ecarte',  dict = 'edo_cavalier', clip = 'ride_c', single = true },
-    { name = 'jet-ski (ancien)', dict = 'veh@boat@jetski@front@base', clip = 'sit_idle', single = true },
+    -- corps VIVANT : une animation par allure (respiration, roulis au pas, rebond au trot, balancier au galop),
+    -- calee image par image sur les foulees du cheval
+    { name = 'cavalier',        dict = 'edo_cavalier2', prefix = 'ride_b', gaits = true },
+    { name = 'cavalier serre',  dict = 'edo_cavalier2', prefix = 'ride_a', gaits = true },
+    { name = 'cavalier ecarte', dict = 'edo_cavalier2', prefix = 'ride_c', gaits = true },
+    -- postures fixes (anciennes)
+    { name = 'fixe',            dict = 'edo_cavalier',  clip = 'ride_b', single = true },
 }
+Config.RiderBob = true        -- le corps rebondit avec les foulees
+Config.RiderLeanMax = 9.0     -- inclinaison max dans les virages (degres)
 
 -- Haut du corps : posture "renes" (mains serrees devant), jouee PAR-DESSUS la posture des jambes.
 Config.RiderArms = 1

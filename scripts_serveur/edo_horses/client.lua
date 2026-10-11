@@ -123,8 +123,10 @@ end
 
 -- recul : le cycle de marche est joue A L'ENVERS, image par image -> les pattes reculent une par une
 local backPhase, walkDur = 0.0, nil
+local curHorseClip = nil
 local function updateHorseAnim(dt)
     local clip, rate = horseClip()
+    curHorseClip = clip
     local reverse = speed < 0 and clip == 'walk'
     local key = reverse and 'walk_reverse' or clip
     if key ~= curClip or not IsEntityPlayingAnim(horse, Config.HorseDict, clip, 3) then
@@ -152,36 +154,77 @@ do
         if a then handY, handZ = tonumber(a), tonumber(b) end
     end
 end
-local legStyle = tonumber(GetResourceKvpString('edo_horses_legs3') or '') or Config.RiderLegs or 1
+local legStyle = tonumber(GetResourceKvpString('edo_horses_legs4') or '') or Config.RiderLegs or 1
 if not Config.LegStyles[legStyle] then legStyle = 1 end
 local function legDict() return Config.LegStyles[legStyle].dict end
-local function updateRiderAnim(ped)
-    local band = bandOf(speed)
-    local key = band == 0 and 'idle' or BAND_NAME[band]
-    if Config.RiderLean and band >= 2 and not Config.LegStyles[legStyle].single then
-        if yawRate > 45.0 then key = 'leanL' elseif yawRate < -45.0 then key = 'leanR' end
+-- mouvements du corps : rebond synchronise sur les foulees, inclinaison dans les virages et a l'acceleration
+local bodyRoll, bodyPitch, lastSpeed, lastAttach = 0.0, 0.0, 0.0, nil
+local BOB = { [1] = { 0.010, 2 }, [2] = { 0.026, 2 }, [3] = { 0.038, 1 }, [4] = { 0.030, 1 } }
+local function riderBody(ped, band, phase, dt)
+    local bob = 0.0
+    if band > 0 and BOB[band] and Config.RiderBob then
+        local amp, f = BOB[band][1], BOB[band][2]
+        bob = amp * math.sin(2 * math.pi * f * phase)
     end
-    local clip = Config.RiderAnim[key] or 'sit'
+    local accel = dt > 0 and (speed - lastSpeed) / dt or 0.0
+    lastSpeed = speed
+    local tRoll = math.max(-Config.RiderLeanMax, math.min(Config.RiderLeanMax, -yawRate * 0.10 * math.min(1.0, math.abs(speed) / 3.0)))
+    local tPitch = math.max(-6.0, math.min(6.0, accel * 1.2))
+    local k = math.min(1.0, dt * 4.0)
+    bodyRoll = bodyRoll + (tRoll - bodyRoll) * k
+    bodyPitch = bodyPitch + (tPitch - bodyPitch) * k
+    local key = ('%.3f %.2f %.2f'):format(bob, bodyRoll, bodyPitch)
+    if key ~= lastAttach then
+        AttachEntityToEntity(ped, horse, -1, seatOffset.x, seatOffset.y, seatOffset.z + bob,
+            seatRot.x + bodyPitch, seatRot.y + bodyRoll, seatRot.z, false, false, false, true, 2, true)
+        lastAttach = key
+    end
+    return bob
+end
+
+local function updateRiderAnim(ped, dt)
+    dt = dt or 0.0
+    local band = bandOf(speed)
     local ls = Config.LegStyles[legStyle]
-    if clip == 'sit' or ls.single then clip = ls.clip end
-    local changed = false
     local dict = legDict()
+    local clip, phase = nil, 0.0
+    if ls.gaits then
+        local g = band == 0 and 'idle' or BAND_NAME[band]
+        if speed < 0 then g = 'walk' end
+        clip = ls.prefix .. '_' .. g
+    else
+        local key = band == 0 and 'idle' or BAND_NAME[band]
+        clip = Config.RiderAnim[key] or 'sit'
+        if clip == 'sit' or ls.single then clip = ls.clip end
+    end
+    local changed = false
     if clip ~= curRider or not IsEntityPlayingAnim(ped, dict, clip, 3) then
-        TaskPlayAnim(ped, dict, clip, 3.0, -3.0, -1, 1, 0.0, false, false, false)
+        TaskPlayAnim(ped, dict, clip, 6.0, -6.0, -1, 1, 0.0, false, false, false)
         curRider = clip
         changed = true
     end
-    -- haut du corps : buste droit, mains basses qui tiennent les renes (calque par-dessus les jambes)
+    -- le corps du cavalier suit EXACTEMENT les foulees du cheval (meme phase d'animation)
+    if ls.gaits and band > 0 and horse and curHorseClip then
+        phase = GetEntityAnimCurrentTime(horse, Config.HorseDict, curHorseClip) or 0.0
+        SetEntityAnimSpeed(ped, dict, clip, 0.0)
+        SetEntityAnimCurrentTime(ped, dict, clip, phase)
+    elseif ls.gaits then
+        SetEntityAnimSpeed(ped, dict, clip, 1.0)
+    end
+    local bob = 0.0
+    if horse then bob = riderBody(ped, band, phase, dt) end
+    -- haut du corps : calque optionnel (l'animation vivante contient deja bras et buste)
     local arms = Config.ArmStyles[armStyle]
-    if arms and HasAnimDictLoaded(arms.dict) and (changed or not IsEntityPlayingAnim(ped, arms.dict, arms.clip, 3)) then
+    if arms and arms.dict and not ls.gaits and HasAnimDictLoaded(arms.dict) and (changed or not IsEntityPlayingAnim(ped, arms.dict, arms.clip, 3)) then
         TaskPlayAnim(ped, arms.dict, arms.clip, 4.0, -4.0, -1, 49, 0.0, false, false, false)
     end
-    -- IK des bras : les mains sont tirees vers un point AU-DESSUS des cuisses (tenue des renes),
-    -- l'animation garde la pose, l'IK l'empeche de traverser les jambes
+    if arms and arms.dict and ls.gaits and IsEntityPlayingAnim(ped, arms.dict, arms.clip, 3) then
+        StopAnimTask(ped, arms.dict, arms.clip, 2.0)
+    end
+    -- IK des bras : les mains tiennent les renes au-dessus des cuisses (suivent le rebond du corps)
     if arms and arms.ik and Config.ReinsIK and horse then
-        local hy, hz = handY, handZ
         for i, side in ipairs({ -1.0, 1.0 }) do
-            local p = GetOffsetFromEntityInWorldCoords(horse, seatOffset.x + side * Config.ReinsIK.spread, seatOffset.y + hy, seatOffset.z + hz)
+            local p = GetOffsetFromEntityInWorldCoords(horse, seatOffset.x + side * Config.ReinsIK.spread, seatOffset.y + handY, seatOffset.z + handZ + bob * 0.6)
             SetIkTarget(ped, i == 1 and 3 or 4, 0, 0, p.x, p.y, p.z, 0, 150, 150)
         end
     end
@@ -230,7 +273,7 @@ local function mount()
     local ped = PlayerPedId()
     if IsEntityDead(ped) or IsPedInAnyVehicle(ped, false) then return end
     local arms = Config.ArmStyles[armStyle]
-    if arms then loadDict(arms.dict) end
+    if arms and arms.dict then loadDict(arms.dict) end
     if not loadDict(legDict()) or not loadDict(Config.HorseDict) then
         return notify('~r~Animations indisponibles.')
     end
@@ -255,7 +298,6 @@ local function mount()
     mounted = true
     SetPedLegIkMode(ped, 0)
     updateRiderAnim(ped)
-    SetTimeout(3000, function() if mounted then legDebug() end end)
 end
 
 local function throwRider(force)
@@ -437,7 +479,7 @@ RegisterCommand('chevaljambes', function(_, a)
     local ped = PlayerPedId()
     StopAnimTask(ped, legDict(), curRider or 'sit', 2.0)
     legStyle = n
-    SetResourceKvp('edo_horses_legs3', tostring(n))
+    SetResourceKvp('edo_horses_legs4', tostring(n))
     curRider = nil
     print(('[edo_horses] Config.RiderLegs = %d (%s)'):format(n, Config.LegStyles[n].name))
     notify('~g~Jambes : ' .. Config.LegStyles[n].name)
@@ -618,7 +660,7 @@ local function ride(now, dt)
     end
 
     updateHorseAnim(dt)
-    updateRiderAnim(ped)
+    updateRiderAnim(ped, dt)
 
     if Config.Debug then
         SetTextFont(4); SetTextScale(0.34, 0.34); SetTextColour(255, 255, 255, 230); SetTextOutline()
@@ -708,4 +750,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.3.0 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.4.0 charge. /cheval ou H pour siffler.') end)
