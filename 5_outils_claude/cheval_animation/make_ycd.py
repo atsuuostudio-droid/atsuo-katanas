@@ -10,6 +10,9 @@ BONES.sort(key=lambda n: byname[n]['tag'] | (1 << 16))
 clips=[]; anims=[]
 for name,P in VARIANTS:
     L=solve(P)
+    # demande : jambe droite = EXACTEMENT les memes valeurs que la jambe gauche
+    for part in ('Thigh','Calf','Foot'):
+        L['SKEL_R_'+part]=L['SKEL_L_'+part].copy()
     clips.append(f'''  <Item>
    <Hash>{name}</Hash>
    <Name>pack:/{name}.clip</Name>
