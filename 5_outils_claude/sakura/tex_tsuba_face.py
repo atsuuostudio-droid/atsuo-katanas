@@ -12,16 +12,7 @@ lac=np.random.default_rng(2).normal(0,1,(S,S)).astype(np.float32); lac=cv2.Gauss
 bg=(C(12,9,11)[None,None]*(1+0.10*lac[...,None])).astype(np.float32)
 cv=Canvas(S,wrap=False,bg=bg); cv.spec[:]=0.85
 def P(rn,ang): return c0+math.cos(ang)*rn*RR, c0+math.sin(ang)*rn*RR
-# ---- hitsu-ana (ouverture sombre) ----
-ha=math.radians(200); hx,hy=P(0.64,ha)
-for sl,X,Y in cv._patches(hx,hy,0.16*RR):
-    u=X*math.cos(ha)+Y*math.sin(ha); v=-X*math.sin(ha)+Y*math.cos(ha)
-    d=np.sqrt((u/(0.07*RR))**2+(v/(0.15*RR))**2)
-    a=np.clip((1-d)*30,0,1)
-    inner=C(2,2,3)[None,None]+(C(26,18,22)-C(2,2,3))[None,None]*np.clip(1-d,0,1)[...,None]*0.3
-    cv.paint(sl,inner,a,np.zeros_like(a)-0.2,np.full_like(a,0.2))
-    ring=np.exp(-((d-1)*18)**2)*0.6
-    cv.paint(sl,np.broadcast_to(C(60,44,40),inner.shape),ring)
+ha=0.0  # (ouverture ovale retirée à la demande)
 # ---- branches (fines, brun-noir avec reflets or) ----
 for k in range(3):
     a0=k*2.1+rng.uniform(0,0.5); pts=[]
@@ -39,7 +30,6 @@ tries=0
 while len(placed)<23 and tries<4000:
     tries+=1
     a=rng.uniform(0,6.28); rn=rng.uniform(0.50,0.84); Rf=rng.uniform(0.095,0.15)
-    if abs(((a-ha+math.pi)%(2*math.pi))-math.pi)<0.35 and abs(rn-0.64)<0.2: continue
     x,y=P(rn,a)
     if any(math.hypot(x-px,y-py)<(Rf+pr)*RR*0.72 for px,py,pr in placed): continue
     placed.append((x,y,Rf))
