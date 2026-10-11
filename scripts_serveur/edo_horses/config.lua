@@ -64,7 +64,7 @@ Config.RiderAnim = { idle = 'sit', walk = 'sit', trot = 'sit', canter = 'sit_fas
                      leanL = 'lean_l_slow', leanR = 'lean_r_slow' }
 Config.RiderLean = true
 -- Jambes : posture assise (changeable en jeu : /chevaljambes 1 a 9, sauvegarde par joueur)
-Config.RiderLegs = 1
+Config.RiderLegs = 6
 Config.LegStyles = {
     { name = 'quad (jambes ecartees)', dict = 'veh@bike@quad@front@base',    clip = 'sit' },
     { name = 'chopper (pieds devant)', dict = 'veh@bike@chopper@front@base', clip = 'sit' },
@@ -88,7 +88,7 @@ Config.ReinsIK = { forward = 0.40, up = 0.04, spread = 0.07 }
 
 
 -- Position du cavalier sur le dos du cheval (reglable en jeu : /chevalselle x y z, sauvegarde auto)
-Config.RiderOffset   = vector3(0.0, -0.05, 0.28)
+Config.RiderOffset   = vector3(0.0, -0.05, 0.40)
 Config.RiderRotation = vector3(0.0, 0.0, 0.0)
 
 -- ============================================================

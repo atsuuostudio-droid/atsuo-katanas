@@ -3,7 +3,7 @@ game 'gta5'
 
 author 'ATSUO'
 description 'EDO Horses 1.0 - monture physique facon Red Dead / Ghost of Tsushima'
-version '1.1.6'
+version '1.1.7'
 
 lua54 'yes'
 
