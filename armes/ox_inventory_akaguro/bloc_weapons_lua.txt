@@ -1,0 +1,7 @@
+-- A coller dans ox_inventory/data/weapons.lua, juste apres le Katana Aizome
+		['WEAPON_KATANA_AKAGURO'] = {
+			label = 'Katana Akaguro',
+			description = "Lame d'acier noir poli miroir, tresse cramoisie et laque noir, rouge et or.",
+			weight = 1500,
+			durability = 0.1,
+		},

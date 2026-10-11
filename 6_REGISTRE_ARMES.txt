@@ -12,6 +12,7 @@ atsuo_katana_kumo      WEAPON_KATANA_KUMO      250 / 480
 atsuo_katana_sakura    WEAPON_KATANA_SAKURA    251 / 481
 atsuo_katana_shiden    WEAPON_KATANA_SHIDEN    252 / 482
 atsuo_katana_aizome    WEAPON_KATANA_AIZOME    253 / 483
+atsuo_katana_akaguro   WEAPON_KATANA_AKAGURO   254 / 484
 
-PROCHAINE ARME : 254 / 484   (puis 255 / 485, etc.)
+PROCHAINE ARME : 255 / 485   (puis 256 / 486, etc.)
 Pense a ajouter chaque nouvelle arme ici.
