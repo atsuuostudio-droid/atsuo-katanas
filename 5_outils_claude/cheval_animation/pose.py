@@ -10,7 +10,7 @@ A+= [58,32,14,4][len(A):]
 P=dict(flex=A[0],abd=A[1],shin_abd=A[2],shin_back=A[3],toe_out=12)
 def pose_deltas(P):
     D={}
-    for side,s in (('L',1),('R',-1)):
+    for side,s in (('L',1),('R',P.get('r_sign',-1))):
         # avant = -Y, gauche = +X, haut = +Z (repere squelette)
         D['SKEL_%s_Thigh'%side]=R('Y',-s*P['abd'])@R('X',-P['flex'])
         D['SKEL_%s_Calf'%side]=R('Y',-s*P['shin_abd'])@R('X',P['shin_back'])
