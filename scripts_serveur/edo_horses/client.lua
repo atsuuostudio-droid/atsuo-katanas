@@ -701,4 +701,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.1.3 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.1.4 charge. /cheval ou H pour siffler.') end)
