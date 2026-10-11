@@ -60,12 +60,18 @@ Config.TurnAnims = true          -- animations de virage (mettre false si le che
 Config.TurnAnimThreshold = 40.0   -- vitesse de rotation (deg/s) a partir de laquelle on joue l'animation de virage
 
 -- Cavalier : posture de pilote (jambes ecartees, buste en avant au galop)
-Config.RiderDict = 'veh@bike@dirt@front@base'
 Config.RiderAnim = { idle = 'sit', walk = 'sit', trot = 'sit', canter = 'sit_fast', gallop = 'sit_fast',
                      leanL = 'lean_l_slow', leanR = 'lean_r_slow' }
 Config.RiderLean = true
--- Jambes : variantes de la posture assise (changeable en jeu : /chevaljambes 1 | 2 | 3)
-Config.LegStyles = { 'sit', 'sit_high', 'sit_low' }
+-- Jambes : posture assise (changeable en jeu : /chevaljambes 1 a 5, sauvegarde par joueur)
+Config.RiderLegs = 1
+Config.LegStyles = {
+    { name = 'quad (jambes ecartees)', dict = 'veh@bike@quad@front@base',    clip = 'sit' },
+    { name = 'chopper (pieds devant)', dict = 'veh@bike@chopper@front@base', clip = 'sit' },
+    { name = 'moto cross',             dict = 'veh@bike@dirt@front@base',    clip = 'sit' },
+    { name = 'moto cross haute',       dict = 'veh@bike@dirt@front@base',    clip = 'sit_high' },
+    { name = 'sportive',               dict = 'veh@bike@sport@front@base',   clip = 'sit' },
+}
 
 -- Haut du corps : posture "renes" (mains serrees devant), jouee PAR-DESSUS la posture des jambes.
 Config.RiderArms = 1
@@ -76,9 +82,6 @@ Config.ArmStyles = {
 -- Reglable en jeu : /chevalmains 0.40 0.04 (sauvegarde auto). Mettre Config.ReinsIK = false pour couper.
 Config.ReinsIK = { forward = 0.40, up = 0.04, spread = 0.07 }
 
--- Pieds dans les etriers (par rapport a la selle) : ecart sur les cotes / avant / hauteur.
--- Reglable en jeu : /chevalpieds 0.42 0.05 -0.58 (sauvegarde auto). Mettre Config.StirrupsIK = false pour couper.
-Config.StirrupsIK = { out = 0.42, forward = 0.05, down = -0.58 }
 
 -- Position du cavalier sur le dos du cheval (reglable en jeu : /chevalselle x y z, sauvegarde auto)
 Config.RiderOffset   = vector3(0.0, -0.05, 0.28)

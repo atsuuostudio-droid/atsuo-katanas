@@ -143,15 +143,6 @@ local function updateHorseAnim(dt)
 end
 
 local armStyle = 1   -- une seule posture : renes
-local footX, footY, footZ = 0.36, 0.05, -0.70
-if Config.StirrupsIK then footX, footY, footZ = Config.StirrupsIK.out, Config.StirrupsIK.forward, Config.StirrupsIK.down end
-do
-    local kvp = GetResourceKvpString('edo_horses_feet')
-    if kvp then
-        local a, b, c = kvp:match('([%-%d%.]+) ([%-%d%.]+) ([%-%d%.]+)')
-        if a then footX, footY, footZ = tonumber(a), tonumber(b), tonumber(c) end
-    end
-end
 local handY, handZ = Config.ReinsIK and Config.ReinsIK.forward or 0.3, Config.ReinsIK and Config.ReinsIK.up or 0.2
 do
     local kvp = GetResourceKvpString('edo_horses_hands4')
@@ -160,7 +151,9 @@ do
         if a then handY, handZ = tonumber(a), tonumber(b) end
     end
 end
-local legStyle = tonumber(GetResourceKvpString('edo_horses_legs') or '') or 1
+local legStyle = tonumber(GetResourceKvpString('edo_horses_legs2') or '') or Config.RiderLegs or 1
+if not Config.LegStyles[legStyle] then legStyle = 1 end
+local function legDict() return Config.LegStyles[legStyle].dict end
 local function updateRiderAnim(ped)
     local band = bandOf(speed)
     local key = band == 0 and 'idle' or BAND_NAME[band]
@@ -168,10 +161,11 @@ local function updateRiderAnim(ped)
         if yawRate > 45.0 then key = 'leanL' elseif yawRate < -45.0 then key = 'leanR' end
     end
     local clip = Config.RiderAnim[key] or 'sit'
-    if clip == 'sit' then clip = Config.LegStyles[legStyle] or 'sit' end
+    if clip == 'sit' then clip = Config.LegStyles[legStyle].clip end
     local changed = false
-    if clip ~= curRider or not IsEntityPlayingAnim(ped, Config.RiderDict, clip, 3) then
-        TaskPlayAnim(ped, Config.RiderDict, clip, 3.0, -3.0, -1, 1, 0.0, false, false, false)
+    local dict = legDict()
+    if clip ~= curRider or not IsEntityPlayingAnim(ped, dict, clip, 3) then
+        TaskPlayAnim(ped, dict, clip, 3.0, -3.0, -1, 1, 0.0, false, false, false)
         curRider = clip
         changed = true
     end
@@ -187,13 +181,6 @@ local function updateRiderAnim(ped)
         for i, side in ipairs({ -1.0, 1.0 }) do
             local p = GetOffsetFromEntityInWorldCoords(horse, seatOffset.x + side * Config.ReinsIK.spread, seatOffset.y + hy, seatOffset.z + hz)
             SetIkTarget(ped, i == 1 and 3 or 4, 0, 0, p.x, p.y, p.z, 0, 150, 150)
-        end
-    end
-    -- IK des jambes : les pieds sont places a l'exterieur des flancs (dans les etriers), plus dans le cheval
-    if Config.StirrupsIK and horse then
-        for i, side in ipairs({ -1.0, 1.0 }) do
-            local p = GetOffsetFromEntityInWorldCoords(horse, seatOffset.x + side * footX, seatOffset.y + footY, seatOffset.z + footZ)
-            SetIkTarget(ped, i == 1 and 5 or 6, 0, 0, p.x, p.y, p.z, 0, 150, 150)
         end
     end
 end
@@ -241,7 +228,7 @@ local function mount()
     if IsEntityDead(ped) or IsPedInAnyVehicle(ped, false) then return end
     local arms = Config.ArmStyles[armStyle]
     if arms then loadDict(arms.dict) end
-    if not loadDict(Config.RiderDict) or not loadDict(Config.HorseDict) then
+    if not loadDict(legDict()) or not loadDict(Config.HorseDict) then
         return notify('~r~Animations indisponibles.')
     end
     -- hauteur naturelle du cheval au-dessus du sol (mesuree debout, avant de le piloter)
@@ -416,24 +403,22 @@ RegisterCommand('chevalmains', function(_, a)
     notify('~g~Mains reglees et sauvegardees.')
 end, false)
 
--- position des pieds (etriers) : /chevalpieds ecart avant hauteur   ex : /chevalpieds 0.36 0.05 -0.70
-RegisterCommand('chevalpieds', function(_, a)
-    local x, y, z = tonumber(a[1]), tonumber(a[2]), tonumber(a[3])
-    if not z then return notify(('Pieds : %.2f %.2f %.2f  (usage : /chevalpieds ecart avant hauteur)'):format(footX, footY, footZ)) end
-    footX, footY, footZ = x, y, z
-    SetResourceKvp('edo_horses_feet', ('%.3f %.3f %.3f'):format(x, y, z))
-    print(('[edo_horses] Config.StirrupsIK out = %.3f, forward = %.3f, down = %.3f'):format(x, y, z))
-    notify('~g~Pieds regles et sauvegardes.')
-end, false)
-
 -- posture des jambes : /chevaljambes 1 | 2 | 3
 RegisterCommand('chevaljambes', function(_, a)
     local n = tonumber(a[1])
-    if not n or not Config.LegStyles[n] then return notify('Usage : /chevaljambes 1 | 2 | 3') end
+    if not n or not Config.LegStyles[n] then
+        local t = {}
+        for i, st in ipairs(Config.LegStyles) do t[#t + 1] = i .. ' ' .. st.name end
+        return notify('Usage : /chevaljambes ' .. table.concat(t, ' | '))
+    end
+    if not loadDict(Config.LegStyles[n].dict) then return notify('~r~Animation indisponible.') end
+    local ped = PlayerPedId()
+    StopAnimTask(ped, legDict(), curRider or 'sit', 2.0)
     legStyle = n
-    SetResourceKvp('edo_horses_legs', tostring(n))
+    SetResourceKvp('edo_horses_legs2', tostring(n))
     curRider = nil
-    notify('~g~Jambes : ' .. Config.LegStyles[n])
+    print(('[edo_horses] Config.RiderLegs = %d (%s)'):format(n, Config.LegStyles[n].name))
+    notify('~g~Jambes : ' .. Config.LegStyles[n].name)
 end, false)
 
 
@@ -701,4 +686,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.1.4 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.1.5 charge. /cheval ou H pour siffler.') end)
