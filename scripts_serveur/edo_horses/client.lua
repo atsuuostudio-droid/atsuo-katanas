@@ -24,7 +24,7 @@ local GAIT_LABEL = { [0] = 'ARRÊT', 'AU PAS', 'TROT', 'PETIT GALOP', 'GALOP' }
 local seatOffset = Config.RiderOffset
 local seatRot = Config.RiderRotation
 do
-    local kvp = GetResourceKvpString('edo_horses_seat2')
+    local kvp = GetResourceKvpString('edo_horses_seat3')
     if kvp then
         local x, y, z = kvp:match('([%-%d%.]+) ([%-%d%.]+) ([%-%d%.]+)')
         if x then seatOffset = vector3(tonumber(x), tonumber(y), tonumber(z)) end
@@ -160,9 +160,50 @@ local function legDict() return Config.LegStyles[legStyle].dict end
 -- mouvements du corps : rebond synchronise sur les foulees, inclinaison dans les virages et a l'acceleration
 local bodyRoll, bodyPitch, lastSpeed, lastAttach = 0.0, 0.0, 0.0, nil
 local BOB = { [1] = { 0.010, 2 }, [2] = { 0.026, 2 }, [3] = { 0.038, 1 }, [4] = { 0.030, 1 } }
+-- suivi du DOS du cheval : la selle monte/descend et bascule exactement comme les os de son dos
+local backBones, backRest = nil, nil
+local function boneLocal(name)
+    local idx = GetEntityBoneIndexByName(horse, name)
+    if not idx or idx == -1 then return nil end
+    local w = GetWorldPositionOfEntityBone(horse, idx)
+    return idx, GetOffsetFromEntityGivenWorldCoords(horse, w.x, w.y, w.z)
+end
+local function findBack()
+    backBones, backRest = nil, nil
+    local function first(list)
+        for _, n in ipairs(list) do local i, o = boneLocal(n) if i then return { name = n, idx = i }, o end end
+    end
+    local mid, mo = first(Config.HorseBackBones.mid)
+    local front, fo = first(Config.HorseBackBones.front)
+    local rear, ro = first(Config.HorseBackBones.rear)
+    if mid then
+        backBones = { mid = mid, front = front, rear = rear }
+        backRest = { mid = mo, front = fo, rear = ro }
+        print(('[edo_horses] dos du cheval suivi : %s / %s / %s'):format(mid.name, front and front.name or '-', rear and rear.name or '-'))
+    else
+        print('[edo_horses] os du dos introuvables : rebond simule')
+    end
+end
+local function backMotion()
+    if not backBones then return nil, 0.0 end
+    local function cur(b) local w = GetWorldPositionOfEntityBone(horse, b.idx) return GetOffsetFromEntityGivenWorldCoords(horse, w.x, w.y, w.z) end
+    local dz = cur(backBones.mid).z - backRest.mid.z
+    local pitch = 0.0
+    if backBones.front and backBones.rear then
+        local f, r = cur(backBones.front), cur(backBones.rear)
+        local f0, r0 = backRest.front, backRest.rear
+        local a = math.deg(math.atan(f.z - r.z, f.y - r.y)) - math.deg(math.atan(f0.z - r0.z, f0.y - r0.y))
+        pitch = math.max(-15.0, math.min(15.0, a))
+    end
+    return dz, pitch
+end
+
 local function riderBody(ped, band, phase, dt)
     local bob = 0.0
-    if band > 0 and BOB[band] and Config.RiderBob then
+    local backDz, backPitch = backMotion()
+    if backDz then
+        bob = math.max(-0.25, math.min(0.25, backDz)) + Config.SeatClearance
+    elseif band > 0 and BOB[band] and Config.RiderBob then
         local amp, f = BOB[band][1], BOB[band][2]
         bob = amp * math.sin(2 * math.pi * f * phase)
     end
@@ -173,10 +214,10 @@ local function riderBody(ped, band, phase, dt)
     local k = math.min(1.0, dt * 4.0)
     bodyRoll = bodyRoll + (tRoll - bodyRoll) * k
     bodyPitch = bodyPitch + (tPitch - bodyPitch) * k
-    local key = ('%.3f %.2f %.2f'):format(bob, bodyRoll, bodyPitch)
+    local key = ('%.3f %.2f %.2f %.2f'):format(bob, bodyRoll, bodyPitch, backPitch or 0.0)
     if key ~= lastAttach then
         AttachEntityToEntity(ped, horse, -1, seatOffset.x, seatOffset.y, seatOffset.z + bob,
-            seatRot.x + bodyPitch, seatRot.y + bodyRoll, seatRot.z, false, false, false, true, 2, true)
+            seatRot.x + bodyPitch - (backPitch or 0.0), seatRot.y + bodyRoll, seatRot.z, false, false, false, true, 2, true)
         lastAttach = key
     end
     return bob
@@ -296,6 +337,7 @@ local function mount()
     speed, yawRate, gait, vz = 0.0, 0.0, 0, 0.0
     curClip, curRider = nil, nil
     mounted = true
+    findBack()
     SetPedLegIkMode(ped, 0)
     updateRiderAnim(ped)
 end
@@ -493,7 +535,7 @@ RegisterCommand('chevalselle', function(_, a)
         return notify(('Selle : %.2f %.2f %.2f  (usage : /chevalselle x y z)'):format(seatOffset.x, seatOffset.y, seatOffset.z))
     end
     seatOffset = vector3(x, y, z)
-    SetResourceKvp('edo_horses_seat2', ('%.3f %.3f %.3f'):format(x, y, z))
+    SetResourceKvp('edo_horses_seat3', ('%.3f %.3f %.3f'):format(x, y, z))
     if mounted then attachRider(PlayerPedId()) end
     print(('[edo_horses] Config.RiderOffset = vector3(%.3f, %.3f, %.3f)'):format(x, y, z))
     notify('~g~Selle reglee et sauvegardee.')
@@ -750,4 +792,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.4.0 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.4.1 charge. /cheval ou H pour siffler.') end)

@@ -70,13 +70,20 @@ Config.RiderLegs = 1
 Config.LegStyles = {
     -- corps VIVANT : une animation par allure (respiration, roulis au pas, rebond au trot, balancier au galop),
     -- calee image par image sur les foulees du cheval
-    { name = 'cavalier',        dict = 'edo_cavalier2', prefix = 'ride_b', gaits = true },
-    { name = 'cavalier serre',  dict = 'edo_cavalier2', prefix = 'ride_a', gaits = true },
-    { name = 'cavalier ecarte', dict = 'edo_cavalier2', prefix = 'ride_c', gaits = true },
+    { name = 'cavalier',        dict = 'edo_cavalier3', prefix = 'ride_b', gaits = true },
+    { name = 'cavalier serre',  dict = 'edo_cavalier3', prefix = 'ride_a', gaits = true },
+    { name = 'cavalier ecarte', dict = 'edo_cavalier3', prefix = 'ride_c', gaits = true },
     -- postures fixes (anciennes)
     { name = 'fixe',            dict = 'edo_cavalier',  clip = 'ride_b', single = true },
 }
-Config.RiderBob = true        -- le corps rebondit avec les foulees
+Config.RiderBob = true        -- rebond simule (seulement si les os du dos du cheval sont introuvables)
+-- La selle suit les os du DOS du cheval (pas de traversee quand le dos monte au galop)
+Config.HorseBackBones = {
+    mid   = { 'SKEL_Spine2', 'SKEL_Spine3', 'SKEL_Spine1', 'SKEL_Spine_Root', 'SKEL_Spine0' },
+    front = { 'SKEL_Neck_1', 'SKEL_Spine3', 'SKEL_Neck0' },
+    rear  = { 'SKEL_Pelvis', 'SKEL_Spine0', 'SKEL_Spine_Root' },
+}
+Config.SeatClearance = 0.03   -- marge au-dessus du dos (m) : plus = moins de contact avec le cheval
 Config.RiderLeanMax = 9.0     -- inclinaison max dans les virages (degres)
 
 -- Haut du corps : posture "renes" (mains serrees devant), jouee PAR-DESSUS la posture des jambes.
@@ -90,7 +97,7 @@ Config.ReinsIK = { forward = 0.40, up = 0.04, spread = 0.07 }
 
 
 -- Position du cavalier sur le dos du cheval (reglable en jeu : /chevalselle x y z, sauvegarde auto)
-Config.RiderOffset   = vector3(0.0, -0.05, 0.30)
+Config.RiderOffset   = vector3(0.0, -0.08, 0.32)
 Config.RiderRotation = vector3(0.0, 0.0, 0.0)
 
 -- ============================================================

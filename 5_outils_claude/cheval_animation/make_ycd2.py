@@ -23,9 +23,9 @@ for side,s in (('L',1),('R',-1)):
 GAITS={ # duree cycle, inclinaison buste, amplitudes
  'idle':  dict(dur=3.0, lean=3,  pitch=1.2, f=1, roll=0.0, yaw=0.0, legsw=0.0, knee=0.0, pel=0.0, crouch=0),
  'walk':  dict(dur=1.2, lean=4,  pitch=1.5, f=2, roll=3.5, yaw=3.0, legsw=3.0, knee=0.0, pel=1.5, crouch=0),
- 'trot':  dict(dur=0.7, lean=6,  pitch=4.0, f=2, roll=1.0, yaw=1.0, legsw=1.0, knee=5.0, pel=3.0, crouch=3),
- 'canter':dict(dur=0.75,lean=10, pitch=7.0, f=1, roll=1.5, yaw=1.0, legsw=1.5, knee=4.0, pel=6.0, crouch=5),
- 'gallop':dict(dur=0.5, lean=18, pitch=4.5, f=1, roll=1.0, yaw=0.5, legsw=1.0, knee=6.0, pel=3.0, crouch=12),
+ 'trot':  dict(dur=0.7, lean=4,  pitch=3.0, f=2, roll=1.0, yaw=1.0, legsw=1.0, knee=5.0, pel=3.0, crouch=3),
+ 'canter':dict(dur=0.75,lean=6,  pitch=5.0, f=1, roll=1.5, yaw=1.0, legsw=1.5, knee=4.0, pel=6.0, crouch=5),
+ 'gallop':dict(dur=0.5, lean=8,  pitch=3.5, f=1, roll=1.0, yaw=0.5, legsw=1.0, knee=6.0, pel=3.0, crouch=12),
 }
 SPINE=['SKEL_Spine_Root','SKEL_Spine0','SKEL_Spine1','SKEL_Spine2','SKEL_Spine3']
 SPW=[0.0,0.15,0.35,0.65,1.0]
