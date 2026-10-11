@@ -74,7 +74,7 @@ Config.ArmStyles = {
 }
 
 -- Position du cavalier sur le dos du cheval (reglable en jeu : /chevalselle x y z, sauvegarde auto)
-Config.RiderOffset   = vector3(0.0, -0.05, 0.28)
+Config.RiderOffset   = vector3(0.0, -0.30, 0.28)
 Config.RiderRotation = vector3(0.0, 0.0, 0.0)
 
 -- ============================================================
