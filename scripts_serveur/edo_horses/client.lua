@@ -1,0 +1,572 @@
+-- EDO HORSES 1.0 : monture physique (inertie, allures, pentes, obstacles, chutes)
+-- Le cheval monte est pilote de facon "cinematique" : le script calcule sa vitesse, sa rotation,
+-- le suivi du sol et les collisions, puis cale les animations (pas / trot / petit galop / galop,
+-- virages, montees, descentes) sur la vitesse reelle.
+
+local horse, horseNet = nil, nil
+local mounted, busy = false, false
+local savedRagdoll = true
+
+-- etat physique
+local speed, yawRate, vz = 0.0, 0.0, 0.0
+local gait, lastSpur = 0, 0           -- 0 arret, 1 pas, 2 trot, 3 petit galop, 4 galop
+local hOff = 1.0                      -- hauteur du centre du cheval au-dessus du sol
+local posZ = 0.0
+local stamina, exhausted, lastDrain = Config.MaxStamina, false, 0
+local curClip, curRider = nil, nil
+local slope = 0.0
+local idleSince = 0
+local grazing = false
+
+local GAIT_LABEL = { [0] = 'ARRÊT', 'AU PAS', 'TROT', 'PETIT GALOP', 'GALOP' }
+
+local seatOffset = Config.RiderOffset
+local seatRot = Config.RiderRotation
+do
+    local kvp = GetResourceKvpString('edo_horses_seat')
+    if kvp then
+        local x, y, z = kvp:match('([%-%d%.]+) ([%-%d%.]+) ([%-%d%.]+)')
+        if x then seatOffset = vector3(tonumber(x), tonumber(y), tonumber(z)) end
+    end
+end
+
+-- ------------------------------------------------------------
+-- utilitaires
+-- ------------------------------------------------------------
+local function notify(msg)
+    BeginTextCommandThefeedPost('STRING')
+    AddTextComponentSubstringPlayerName(msg)
+    EndTextCommandThefeedPostTicker(false, false)
+end
+
+local function help(msg)
+    BeginTextCommandDisplayHelp('STRING')
+    AddTextComponentSubstringPlayerName(msg)
+    EndTextCommandDisplayHelp(0, false, false, -1)
+end
+
+local function loadDict(d)
+    if HasAnimDictLoaded(d) then return true end
+    RequestAnimDict(d)
+    local t = GetGameTimer() + 5000
+    while not HasAnimDictLoaded(d) and GetGameTimer() < t do Wait(0) end
+    return HasAnimDictLoaded(d)
+end
+
+local function loadModel(m)
+    if not IsModelInCdimage(m) then return false end
+    RequestModel(m)
+    local t = GetGameTimer() + 10000
+    while not HasModelLoaded(m) and GetGameTimer() < t do Wait(0) end
+    return HasModelLoaded(m)
+end
+
+local function approach(v, target, rate)
+    if v < target then return math.min(target, v + rate) end
+    return math.max(target, v - rate)
+end
+
+local function fwdVec(h)
+    local r = math.rad(h)
+    return -math.sin(r), math.cos(r)
+end
+
+-- sol sous (x, y) entre zTop et zBot (monde + objets), renvoie z ou nil
+local function groundAt(x, y, zTop, zBot)
+    local ray = StartExpensiveSynchronousShapeTestLosProbe(x, y, zTop, x, y, zBot, 17, horse or 0, 7)
+    local _, hit, pos = GetShapeTestResult(ray)
+    if hit == 1 then return pos.z end
+    return nil
+end
+
+-- obstacle entre deux points (monde + vehicules + objets)
+local function blocked(x1, y1, z1, x2, y2, z2)
+    local ray = StartExpensiveSynchronousShapeTestLosProbe(x1, y1, z1, x2, y2, z2, 19, horse or 0, 7)
+    local _, hit = GetShapeTestResult(ray)
+    return hit == 1
+end
+
+local function isAlive(e) return e and DoesEntityExist(e) and not IsEntityDead(e) end
+
+-- ------------------------------------------------------------
+-- animations
+-- ------------------------------------------------------------
+local function bandOf(v)
+    local a = math.abs(v)
+    if a < 0.15 then return 0 end
+    if a < (Config.Speed.walk + Config.Speed.trot) * 0.5 then return 1 end
+    if a < (Config.Speed.trot + Config.Speed.canter) * 0.5 then return 2 end
+    if a < (Config.Speed.canter + Config.Speed.gallop) * 0.5 then return 3 end
+    return 4
+end
+
+local BAND_NAME = { [1] = 'walk', [2] = 'trot', [3] = 'canter', [4] = 'gallop' }
+
+local function horseClip()
+    local band = bandOf(speed)
+    if band == 0 then
+        if yawRate > 25.0 then return 'idle_turn_l', 1.0 end
+        if yawRate < -25.0 then return 'idle_turn_r', 1.0 end
+        return 'idle', 1.0
+    end
+    if speed < 0 then return 'walk_bck_upp', math.max(0.6, -speed / Config.Speed.reverse) end
+    local name = BAND_NAME[band]
+    local clip = name
+    if yawRate > Config.TurnAnimThreshold then clip = name .. '_turn_l'
+    elseif yawRate < -Config.TurnAnimThreshold then clip = name .. '_turn_r'
+    elseif slope > Config.SlopeAnim then clip = name .. '_fwd_upp'
+    elseif slope < -Config.SlopeAnim then clip = name .. '_fwd_dwn' end
+    local rate = math.abs(speed) / Config.AnimRefSpeed[name]
+    return clip, math.max(0.65, math.min(1.45, rate))
+end
+
+local function updateHorseAnim()
+    local clip, rate = horseClip()
+    if clip ~= curClip or not IsEntityPlayingAnim(horse, Config.HorseDict, clip, 3) then
+        TaskPlayAnim(horse, Config.HorseDict, clip, 4.0, -4.0, -1, 1, 0.0, false, false, false)
+        curClip = clip
+    end
+    SetEntityAnimSpeed(horse, Config.HorseDict, clip, rate)
+end
+
+local function updateRiderAnim(ped)
+    local band = bandOf(speed)
+    local key = band == 0 and 'idle' or BAND_NAME[band]
+    if Config.RiderLean and band >= 2 then
+        if yawRate > 45.0 then key = 'leanL' elseif yawRate < -45.0 then key = 'leanR' end
+    end
+    local clip = Config.RiderAnim[key] or 'sit'
+    if clip ~= curRider or not IsEntityPlayingAnim(ped, Config.RiderDict, clip, 3) then
+        TaskPlayAnim(ped, Config.RiderDict, clip, 3.0, -3.0, -1, 1, 0.0, false, false, false)
+        curRider = clip
+    end
+end
+
+-- ------------------------------------------------------------
+-- monter / descendre
+-- ------------------------------------------------------------
+local function attachRider(ped)
+    AttachEntityToEntity(ped, horse, -1, seatOffset.x, seatOffset.y, seatOffset.z,
+        seatRot.x, seatRot.y, seatRot.z, false, false, false, true, 2, true)
+end
+
+local function releaseHorse()
+    grazing = false
+    if not horse or not DoesEntityExist(horse) then return end
+    FreezeEntityPosition(horse, false)
+    ClearPedTasks(horse)
+    curClip = nil
+    idleSince = GetGameTimer()
+end
+
+local function dismount(thrown)
+    if not mounted then return end
+    local ped = PlayerPedId()
+    mounted = false
+    DetachEntity(ped, true, false)
+    ClearPedTasksImmediately(ped)
+    SetEntityCollision(ped, true, true)
+    SetPedCanRagdoll(ped, savedRagdoll)
+    curRider = nil
+
+    if horse and DoesEntityExist(horse) and not thrown then
+        local p = GetOffsetFromEntityInWorldCoords(horse, -1.25, 0.0, 0.0)
+        local gz = groundAt(p.x, p.y, p.z + 2.0, p.z - 5.0) or p.z
+        SetEntityCoords(ped, p.x, p.y, gz, false, false, false, false)
+        SetEntityHeading(ped, GetEntityHeading(horse))
+    end
+    speed, yawRate, gait, vz = 0.0, 0.0, 0, 0.0
+    releaseHorse()
+end
+
+local function mount()
+    if not isAlive(horse) then return end
+    local ped = PlayerPedId()
+    if IsEntityDead(ped) or IsPedInAnyVehicle(ped, false) then return end
+    if not loadDict(Config.RiderDict) or not loadDict(Config.HorseDict) then
+        return notify('~r~Animations indisponibles.')
+    end
+    -- hauteur naturelle du cheval au-dessus du sol (mesuree debout, avant de le piloter)
+    local hp = GetEntityCoords(horse)
+    local gz = groundAt(hp.x, hp.y, hp.z + 1.0, hp.z - 4.0)
+    if gz then hOff = math.max(0.3, math.min(2.2, hp.z - gz)) end
+    posZ = hp.z
+
+    ClearPedTasksImmediately(horse)
+    FreezeEntityPosition(horse, true)       -- le script pilote le cheval : plus de poussee de l'IA
+    grazing = false
+
+    savedRagdoll = CanPedRagdoll(ped)
+    ClearPedTasksImmediately(ped)
+    SetPedCanRagdoll(ped, false)
+    SetEntityCollision(ped, false, false)
+    attachRider(ped)
+
+    speed, yawRate, gait, vz = 0.0, 0.0, 0, 0.0
+    curClip, curRider = nil, nil
+    mounted = true
+    updateRiderAnim(ped)
+end
+
+local function throwRider(force)
+    local ped = PlayerPedId()
+    local fx, fy = fwdVec(GetEntityHeading(horse))
+    dismount(true)
+    SetPedCanRagdoll(ped, true)
+    SetPedToRagdoll(ped, 3500, 4500, 0, false, false, false)
+    SetEntityVelocity(ped, fx * force * 0.6, fy * force * 0.6, 2.5)
+    ApplyDamageToPed(ped, Config.RiderCrashDamage, false)
+    notify('~r~Tu as chute de cheval !')
+end
+
+-- ------------------------------------------------------------
+-- apparition / sifflet
+-- ------------------------------------------------------------
+local horseGroup
+local function setupHorsePed(h)
+    SetEntityAsMissionEntity(h, true, true)
+    SetBlockingOfNonTemporaryEvents(h, true)
+    SetPedFleeAttributes(h, 0, false)
+    SetPedCanRagdoll(h, false)
+    SetEntityMaxHealth(h, Config.HorseHealth)
+    SetEntityHealth(h, Config.HorseHealth)
+    if not horseGroup then
+        local _, g = AddRelationshipGroup('EDO_HORSE')
+        horseGroup = g
+        SetRelationshipBetweenGroups(0, horseGroup, `PLAYER`)
+        SetRelationshipBetweenGroups(0, `PLAYER`, horseGroup)
+    end
+    SetPedRelationshipGroupHash(h, horseGroup)
+end
+
+local function deleteHorse()
+    if mounted then dismount(false) end
+    if horse and DoesEntityExist(horse) then
+        SetEntityAsMissionEntity(horse, true, true)
+        DeleteEntity(horse)
+    end
+    horse, horseNet = nil, nil
+    TriggerServerEvent('edo_horses:forget')
+end
+
+local function spawnHorse(near)
+    if GetResourceState('draft_horse') ~= 'started' then
+        return notify('~r~La ressource draft_horse n\'est pas demarree.')
+    end
+    if not loadModel(Config.Model) then return notify('~r~Modele draft_horse introuvable.') end
+
+    local ped = PlayerPedId()
+    local dist = near and 6.0 or Config.SpawnBehind
+    local p = GetOffsetFromEntityInWorldCoords(ped, 0.0, -dist, 0.0)
+    local ok, safe = GetSafeCoordForPed(p.x, p.y, p.z, false, 16)
+    if not ok then
+        safe = p
+        local gz = groundAt(p.x, p.y, p.z + 30.0, p.z - 30.0)
+        if gz then safe = vector3(p.x, p.y, gz) end
+    end
+    horse = CreatePed(28, Config.Model, safe.x, safe.y, safe.z, GetEntityHeading(ped), true, true)
+    SetModelAsNoLongerNeeded(Config.Model)
+    if not DoesEntityExist(horse) then horse = nil return notify('~r~Echec de creation du cheval.') end
+    setupHorsePed(horse)
+    horseNet = NetworkGetNetworkIdFromEntity(horse)
+    SetNetworkIdCanMigrate(horseNet, false)
+    TriggerServerEvent('edo_horses:register', horseNet)
+    stamina, exhausted = Config.MaxStamina, false
+end
+
+local function whistle()
+    if busy or mounted then return end
+    busy = true
+    local ped = PlayerPedId()
+    if not IsPedInAnyVehicle(ped, false) and loadDict('rcmnigel1c') then
+        TaskPlayAnim(ped, 'rcmnigel1c', 'hailing_whistle_waive_a', 8.0, -8.0, 2200, 48, 0.0, false, false, false)
+    end
+    if not isAlive(horse) then
+        if horse then deleteHorse() end
+        spawnHorse(false)
+    elseif #(GetEntityCoords(horse) - GetEntityCoords(ped)) > Config.TeleportDistance then
+        deleteHorse()
+        spawnHorse(false)
+    end
+    if isAlive(horse) then
+        releaseHorse()
+        grazing = false
+        local d = #(GetEntityCoords(horse) - GetEntityCoords(ped))
+        TaskGoToEntity(horse, ped, -1, 2.2, d > 15.0 and 3.0 or 1.0, 1073741824, 0)
+        notify('~y~Ton cheval arrive.')
+    end
+    busy = false
+end
+
+RegisterCommand(Config.Command, whistle, false)
+RegisterCommand('+edo_siffler', whistle, false)
+RegisterCommand('-edo_siffler', function() end, false)
+RegisterKeyMapping('+edo_siffler', 'Siffler son cheval', 'keyboard', Config.WhistleKey)
+
+RegisterCommand(Config.StoreCommand, function()
+    if horse then deleteHorse() notify('~y~Cheval renvoye.') end
+end, false)
+
+-- reglage de la selle en jeu : /chevalselle x y z  (sans argument : affiche la valeur)
+RegisterCommand('chevalselle', function(_, a)
+    local x, y, z = tonumber(a[1]), tonumber(a[2]), tonumber(a[3])
+    if not z then
+        return notify(('Selle : %.2f %.2f %.2f  (usage : /chevalselle x y z)'):format(seatOffset.x, seatOffset.y, seatOffset.z))
+    end
+    seatOffset = vector3(x, y, z)
+    SetResourceKvp('edo_horses_seat', ('%.3f %.3f %.3f'):format(x, y, z))
+    if mounted then attachRider(PlayerPedId()) end
+    print(('[edo_horses] Config.RiderOffset = vector3(%.3f, %.3f, %.3f)'):format(x, y, z))
+    notify('~g~Selle reglee et sauvegardee.')
+end, false)
+
+-- ------------------------------------------------------------
+-- boucle de pilotage
+-- ------------------------------------------------------------
+local DISABLED = { 21, 22, 23, 24, 25, 32, 33, 34, 35, 36, 37, 44, 45, 47, 58, 69, 70, 92, 114, 140, 141, 142, 143, 257, 263, 264 }
+
+local function readInput(now)
+    for i = 1, #DISABLED do DisableControlAction(0, DISABLED[i], true) end
+    DisableControlAction(0, 30, true); DisableControlAction(0, 31, true)
+    DisablePlayerFiring(PlayerId(), true)
+    if IsPauseMenuActive() or IsNuiFocused() then return false, false, 0.0, false, false end
+
+    local ud = GetDisabledControlNormal(0, 31)
+    local fwd = IsDisabledControlPressed(0, 32) or ud < -0.3
+    local back = IsDisabledControlPressed(0, 33) or ud > 0.3
+    local steer = GetDisabledControlNormal(0, 30)
+    if IsDisabledControlPressed(0, 34) then steer = -1.0 elseif IsDisabledControlPressed(0, 35) then steer = 1.0 end
+    return fwd, back, steer, IsDisabledControlJustPressed(0, 21), IsDisabledControlPressed(0, 21), IsDisabledControlPressed(0, 36)
+end
+
+local function ride(now, dt)
+    local ped = PlayerPedId()
+    local fwd, back, steer, spurTap, spurHeld, walkHeld = readInput(now)
+    local pos = GetEntityCoords(horse)
+    local heading = GetEntityHeading(horse)
+    local gz0 = posZ - hOff
+
+    -- eau
+    local inWater, waterZ = GetWaterHeight(pos.x, pos.y, pos.z + 2.0)
+    local depth = inWater and (waterZ - gz0) or 0.0
+
+    -- allure demandee
+    local maxGait = exhausted and 2 or 4
+    if depth > 0.5 then maxGait = math.min(maxGait, Config.WaterMaxGait) end
+    if Config.ControlStyle == 'tsushima' then
+        if not fwd then gait = 0
+        elseif walkHeld then gait = 1
+        elseif spurHeld then gait = 4
+        else gait = 2 end
+    else
+        if not fwd then gait = 0
+        else
+            if gait == 0 then gait = 1 end
+            if spurTap then gait = gait + 1; lastSpur = now end
+            if gait == 4 and now - lastSpur > Config.GallopKeepMs then gait = 3 end
+        end
+    end
+    gait = math.min(gait, maxGait)
+
+    -- vitesse cible (+ effet de pente et de virage)
+    local target = ({ [0] = 0.0, Config.Speed.walk, Config.Speed.trot, Config.Speed.canter, Config.Speed.gallop })[gait]
+    if target > 0 then
+        target = target * (1.0 - math.max(-0.25, math.min(0.5, slope * Config.SlopeSpeedLoss * 2.0)))
+        if math.abs(steer) > 0.5 and gait >= 3 then target = target * Config.TurnSlowdown end
+    end
+    if back then
+        if speed > 0.3 then speed = approach(speed, 0.0, Config.Brake * dt)
+        else speed = approach(speed, -Config.Speed.reverse, Config.Accel * dt) end
+    else
+        local rate = (target > speed) and Config.Accel or Config.Decel
+        if gait >= 3 and target > speed then rate = rate * 1.25 end
+        speed = approach(speed, target, rate * dt)
+    end
+
+    -- rotation avec inertie
+    local band = bandOf(speed)
+    local tr = band == 0 and Config.TurnRate.idle or Config.TurnRate[BAND_NAME[band]]
+    yawRate = approach(yawRate, -steer * tr, Config.TurnAccel * dt)
+    heading = (heading + yawRate * dt) % 360.0
+    local fx, fy = fwdVec(heading)
+
+    -- obstacles devant / derriere
+    if math.abs(speed) > 0.05 then
+        local dir = speed > 0 and 1.0 or -1.0
+        local reach = Config.HorseLength + math.abs(speed) * dt + 0.35
+        local sx, sy = pos.x + fx * dir * 0.3, pos.y + fy * dir * 0.3
+        local ex, ey = pos.x + fx * dir * reach, pos.y + fy * dir * reach
+        local px, py = -fy * 0.35, fx * 0.35
+        local hit = false
+        for _, h in ipairs({ 0.75, 1.45 }) do
+            local z = gz0 + h
+            if blocked(sx, sy, z, ex, ey, z) or blocked(sx + px, sy + py, z, ex + px, ey + py, z)
+                or blocked(sx - px, sy - py, z, ex - px, ey - py, z) then hit = true break end
+        end
+        -- pente trop raide devant
+        if not hit then
+            local ax, ay = pos.x + fx * dir * (Config.HorseLength + 0.4), pos.y + fy * dir * (Config.HorseLength + 0.4)
+            local gzA = groundAt(ax, ay, gz0 + 2.5, gz0 - 3.0)
+            if gzA and (gzA - gz0) / (Config.HorseLength + 0.4) > Config.MaxSlope then hit = true end
+            if depth > Config.MaxWaterDepth and dir > 0 then hit = true end
+        end
+        if hit then
+            if speed > Config.CrashSpeed then
+                local f = speed
+                speed = 0.0
+                SetEntityHealth(horse, math.max(1, GetEntityHealth(horse) - 40))
+                throwRider(f)
+                return
+            end
+            speed = 0.0
+        end
+    end
+
+    -- PNJ percutes
+    if speed > Config.PedKnockSpeed then
+        local hx, hy = pos.x + fx * Config.HorseLength, pos.y + fy * Config.HorseLength
+        for _, p in ipairs(GetGamePool('CPed')) do
+            if p ~= ped and p ~= horse and not IsPedAPlayer(p) and not IsPedInAnyVehicle(p, false) then
+                local pp = GetEntityCoords(p)
+                if (pp.x - hx) ^ 2 + (pp.y - hy) ^ 2 < 1.0 and math.abs(pp.z - pos.z) < 2.0 then
+                    SetPedToRagdoll(p, 2500, 3500, 0, false, false, false)
+                    ApplyForceToEntity(p, 1, fx * speed * 0.8, fy * speed * 0.8, 2.0, 0.0, 0.0, 0.0, 0, false, true, true, false, true)
+                    speed = speed * 0.8
+                end
+            end
+        end
+    end
+
+    -- deplacement + suivi du sol
+    local nx, ny = pos.x + fx * speed * dt, pos.y + fy * speed * dt
+    local gz = groundAt(nx, ny, gz0 + 1.6, gz0 - 8.0)
+    local stepD = math.abs(speed * dt)
+    local targetZ = gz and (gz + hOff) or nil
+    if targetZ and posZ - targetZ < 0.45 then
+        if vz < -Config.FallThrowSpeed then
+            vz = 0.0
+            posZ = targetZ
+            SetEntityHealth(horse, math.max(1, GetEntityHealth(horse) - 60))
+            throwRider(6.0)
+            return
+        end
+        vz = 0.0
+        posZ = posZ + (targetZ - posZ) * math.min(1.0, dt * 14.0)
+        if stepD > 0.001 then
+            local s = (gz - gz0) / stepD
+            slope = slope + (math.max(-1.0, math.min(1.0, s)) * (speed >= 0 and 1 or -1) - slope) * math.min(1.0, dt * 4.0)
+        else
+            slope = slope * (1.0 - math.min(1.0, dt * 4.0))
+        end
+    else
+        -- chute libre (rebord, falaise)
+        vz = vz - 9.81 * dt
+        posZ = posZ + vz * dt
+        if targetZ and posZ < targetZ then posZ = targetZ end
+    end
+
+    SetEntityCoordsNoOffset(horse, nx, ny, posZ, false, false, false)
+    SetEntityHeading(horse, heading)
+
+    -- endurance
+    local b = bandOf(speed)
+    if b == 4 then
+        stamina = math.max(0.0, stamina - Config.StaminaDrain.gallop * dt); lastDrain = now
+    elseif b == 3 then
+        stamina = math.max(0.0, stamina - Config.StaminaDrain.canter * dt); lastDrain = now
+    end
+    if stamina <= 0.0 and not exhausted then
+        exhausted = true
+        notify('~o~Ton cheval est epuise.')
+    end
+
+    updateHorseAnim()
+    updateRiderAnim(ped)
+
+    if Config.Debug then
+        SetTextFont(4); SetTextScale(0.34, 0.34); SetTextColour(255, 255, 255, 230); SetTextOutline()
+        BeginTextCommandDisplayText('STRING')
+        AddTextComponentSubstringPlayerName(('%s | %.1f m/s | pente %.2f | endurance %d%% | %s')
+            :format(GAIT_LABEL[gait], speed, slope, math.floor(stamina), curClip or '-'))
+        EndTextCommandDisplayText(0.015, 0.80)
+    end
+
+    if IsDisabledControlJustPressed(0, 51) or IsControlJustPressed(0, 51) then
+        if math.abs(speed) < 2.5 then dismount(false) else notify('Ralentis pour descendre.') end
+    end
+end
+
+CreateThread(function()
+    local last = GetGameTimer()
+    while true do
+        local now = GetGameTimer()
+        local dt = math.min(0.1, (now - last) / 1000.0)
+        last = now
+
+        if mounted then
+            Wait(0)
+            local ped = PlayerPedId()
+            if not isAlive(horse) or IsEntityDead(ped) or not IsEntityAttachedToEntity(ped, horse) then
+                dismount(not isAlive(horse))
+            else
+                ride(now, dt)
+            end
+        elseif isAlive(horse) then
+            local ped = PlayerPedId()
+            local d = #(GetEntityCoords(ped) - GetEntityCoords(horse))
+            if d < Config.MountDistance and not IsPedInAnyVehicle(ped, false) and not IsEntityDead(ped) then
+                Wait(0)
+                help('~INPUT_CONTEXT~ Monter a cheval')
+                if IsControlJustPressed(0, 51) then mount() end
+            else
+                Wait(200)
+                -- seul et immobile depuis un moment : il broute
+                if not grazing and now - idleSince > Config.GrazeAfterMs and GetEntitySpeed(horse) < 0.2 then
+                    if loadDict('creatures@deer@amb@world_deer_grazing@base') then
+                        TaskPlayAnim(horse, 'creatures@deer@amb@world_deer_grazing@base', 'base', 2.0, -2.0, -1, 1, 0.0, false, false, false)
+                        grazing = true
+                    end
+                end
+            end
+        else
+            Wait(500)
+        end
+    end
+end)
+
+-- recuperation d'endurance + pont HUD
+local hudWarned = false
+CreateThread(function()
+    local prev = GetGameTimer()
+    while true do
+        Wait(200)
+        local now = GetGameTimer()
+        local dt = (now - prev) / 1000.0
+        prev = now
+        if horse and now - lastDrain > Config.StaminaRegenDelayMs then
+            stamina = math.min(Config.MaxStamina, stamina + Config.StaminaRegen * dt)
+            if exhausted and stamina >= Config.ExhaustedRecovery then
+                exhausted = false
+                if mounted then notify('~g~Ton cheval a repris son souffle.') end
+            end
+        end
+        if GetResourceState(Config.HudResource) == 'started' then
+            local alive = isAlive(horse)
+            local health = alive and math.floor(math.max(0, (GetEntityHealth(horse) - 100) / math.max(1, GetEntityMaxHealth(horse) - 100) * 100)) or 0
+            local ok = pcall(function()
+                exports[Config.HudResource]:SetHorse({ active = mounted, health = health,
+                    stamina = stamina / Config.MaxStamina * 100, gait = GAIT_LABEL[mounted and bandOf(speed) or 0] })
+            end)
+            if not ok and not hudWarned then print('[edo_horses] HUD : export SetHorse indisponible.') hudWarned = true end
+        end
+    end
+end)
+
+exports('GetHorseStamina', function() return stamina end)
+exports('GetHorseGait', function() return GAIT_LABEL[bandOf(speed)] end)
+exports('IsMountedOnHorse', function() return mounted end)
+exports('GetHorseEntity', function() return horse end)
+
+AddEventHandler('onResourceStop', function(res)
+    if res == GetCurrentResourceName() then deleteHorse() end
+end)

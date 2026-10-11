@@ -1,0 +1,2 @@
+-- draft_horse : teinte rose retiree, le cheval garde ses textures d'origine.
+-- (l'ancien code remplacait toutes les textures du modele par pink.png)

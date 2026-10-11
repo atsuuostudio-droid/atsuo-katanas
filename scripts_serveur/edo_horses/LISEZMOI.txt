@@ -1,0 +1,44 @@
+EDO HORSES 1.0 - monture physique facon Red Dead / Ghost of Tsushima
+
+INSTALLATION
+1. Sauvegarde ton ancien dossier edo_horses, puis supprime-le du serveur.
+2. Mets ce dossier edo_horses a la place (resources/[local]/edo_horses).
+3. Dans draft_horse, remplace client.lua par celui du dossier draft_horse_sans_rose
+   (retire la teinte rose). Ne touche a rien d'autre dans draft_horse.
+4. server.cfg, dans cet ordre :
+     ensure draft_horse
+     ensure edo_hud
+     ensure edo_horses
+5. Redemarre le serveur.
+
+COMMANDES / TOUCHES
+H ou /cheval    : siffler. Le cheval apparait derriere toi et arrive au galop
+                  (s'il existe deja, il te rejoint).
+E               : monter / descendre (il faut etre presque a l'arret pour descendre).
+Z               : avancer (au pas).
+SHIFT (tape)    : allure superieure : trot > petit galop > galop.
+                  Le galop se maintient en tapotant SHIFT, comme dans Red Dead.
+S               : freiner ; a l'arret, reculer.
+Q / D           : tourner (virage serre au pas, large au galop).
+/rangercheval   : renvoyer le cheval.
+/chevalselle x y z : regler la position du cavalier sur le dos (sauvegarde automatique).
+
+Style Ghost of Tsushima : dans config.lua, Config.ControlStyle = 'tsushima'
+   (Z = trot, SHIFT maintenu = galop, CTRL maintenu = pas).
+
+CE QUE FAIT LA PHYSIQUE
+- Inertie : le cheval accelere et freine progressivement, les virages "s'engagent".
+- 4 allures + recul, animations calees sur la vitesse reelle.
+- Animations de virage, de montee et de descente selon le terrain.
+- Ralentit en montee, accelere un peu en descente, refuse les pentes trop raides.
+- Eau : trot max, refuse l'eau trop profonde.
+- Percuter un mur au galop ou tomber de haut = le cavalier est ejecte.
+- Les PNJ percutes au trot/galop sont renverses.
+- Endurance : le galop fatigue le cheval ; epuise, il ne depasse plus le trot.
+- Seul et immobile, il broute.
+
+REGLAGES (config.lua)
+- Si les sabots "glissent" : augmente Config.AnimRefSpeed pour l'allure concernee.
+- Si les pattes vont trop vite : baisse-la.
+- Vitesses, inertie, rayon de virage : Config.Speed, Config.Accel, Config.TurnRate...
+- Config.Debug = true affiche l'allure, la vitesse et l'animation a l'ecran.
