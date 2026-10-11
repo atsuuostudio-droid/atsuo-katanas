@@ -142,7 +142,15 @@ local function updateHorseAnim(dt)
     end
 end
 
-local armStyle = tonumber(GetResourceKvpString('edo_horses_arms2') or '') or Config.RiderArms
+local armStyle = tonumber(GetResourceKvpString('edo_horses_arms3') or '') or Config.RiderArms
+local handY, handZ = Config.ReinsIK and Config.ReinsIK.forward or 0.3, Config.ReinsIK and Config.ReinsIK.up or 0.2
+do
+    local kvp = GetResourceKvpString('edo_horses_hands')
+    if kvp then
+        local a, b = kvp:match('([%-%d%.]+) ([%-%d%.]+)')
+        if a then handY, handZ = tonumber(a), tonumber(b) end
+    end
+end
 local legStyle = tonumber(GetResourceKvpString('edo_horses_legs') or '') or 1
 local function updateRiderAnim(ped)
     local band = bandOf(speed)
@@ -162,6 +170,15 @@ local function updateRiderAnim(ped)
     local arms = Config.ArmStyles[armStyle]
     if arms and HasAnimDictLoaded(arms.dict) and (changed or not IsEntityPlayingAnim(ped, arms.dict, arms.clip, 3)) then
         TaskPlayAnim(ped, arms.dict, arms.clip, 4.0, -4.0, -1, 49, 0.0, false, false, false)
+    end
+    -- IK des bras : les mains sont tirees vers un point AU-DESSUS des cuisses (tenue des renes),
+    -- l'animation garde la pose, l'IK l'empeche de traverser les jambes
+    if arms and arms.ik and Config.ReinsIK and horse then
+        local hy, hz = handY, handZ
+        for i, side in ipairs({ -1.0, 1.0 }) do
+            local p = GetOffsetFromEntityInWorldCoords(horse, seatOffset.x + side * Config.ReinsIK.spread, seatOffset.y + hy, seatOffset.z + hz)
+            SetIkTarget(ped, i == 1 and 3 or 4, 0, 0, p.x, p.y, p.z, 0, 150, 150)
+        end
     end
 end
 
@@ -373,6 +390,16 @@ RegisterCommand('chevalanim', function(_, a)
     TaskPlayAnim(horse, Config.HorseDict, a[1], 4.0, -4.0, 4000, 1, 0.0, false, false, false)
 end, false)
 
+-- position des mains (renes) : /chevalmains avant hauteur   ex : /chevalmains 0.30 0.20
+RegisterCommand('chevalmains', function(_, a)
+    local y, z = tonumber(a[1]), tonumber(a[2])
+    if not z then return notify(('Mains : %.2f %.2f  (usage : /chevalmains avant hauteur)'):format(handY, handZ)) end
+    handY, handZ = y, z
+    SetResourceKvp('edo_horses_hands', ('%.3f %.3f'):format(y, z))
+    print(('[edo_horses] Config.ReinsIK forward = %.3f, up = %.3f'):format(y, z))
+    notify('~g~Mains reglees et sauvegardees.')
+end, false)
+
 -- posture des jambes : /chevaljambes 1 | 2 | 3
 RegisterCommand('chevaljambes', function(_, a)
     local n = tonumber(a[1])
@@ -387,13 +414,13 @@ end, false)
 RegisterCommand('chevalbras', function(_, a)
     local n = tonumber(a[1])
     if not n or n < 1 or n > #Config.ArmStyles + 1 then
-        return notify('Usage : /chevalbras 1 (renes) | 2 (renes basses) | 3 (cowboy) | 4 (moto)')
+        return notify('Usage : /chevalbras 1 (renes) | 2 (bras en avant) | 3 (cowboy) | 4 (moto)')
     end
     local ped = PlayerPedId()
     local old = Config.ArmStyles[armStyle]
     if old then StopAnimTask(ped, old.dict, old.clip, 2.0) end
     armStyle = n
-    SetResourceKvp('edo_horses_arms2', tostring(n))
+    SetResourceKvp('edo_horses_arms3', tostring(n))
     local st = Config.ArmStyles[n]
     if st then loadDict(st.dict) end
     curRider = nil
@@ -664,4 +691,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.0.6 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.0.7 charge. /cheval ou H pour siffler.') end)
