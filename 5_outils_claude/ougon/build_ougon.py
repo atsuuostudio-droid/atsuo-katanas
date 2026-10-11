@@ -357,15 +357,16 @@ for i in range(len(rings)-1):
     for j in range(40):
         j2=(j+1)%40
         f=bm.faces.new([rings[i][j],rings[i][j2],rings[i+1][j2],rings[i+1][j]])
-        for l in f.loops: l[uv].uv=(0.5+(l.vert.co.x-X_HAB0-0.017)/0.017*0.09,0.5+(l.vert.co.z-0.0545)/0.022*0.09)
+        for l in f.loops: l[uv].uv=((l.vert.co.x-X_HAB0)/(X_HAB1-X_HAB0),(l.vert.co.z-0.0295)/0.050)
 for ring,flip in ((rings[0],True),(rings[-1],False)):
     c=bm.verts.new(sum((v.co for v in ring),Vector())/len(ring))
     for j in range(40):
         vs=[ring[j],ring[(j+1)%40],c]
         if flip: vs=vs[::-1]
         f=bm.faces.new(vs)
-        for l in f.loops: l[uv].uv=(0.5+l.vert.co.y/0.006*0.05,0.5+(l.vert.co.z-0.0545)/0.022*0.09)
-bm.normal_update(); habaki=new_obj('habaki',bm,[M_TSUBA])
+        for l in f.loops: l[uv].uv=(0.02+abs(l.vert.co.y)/0.006*0.01,(l.vert.co.z-0.0295)/0.050)
+M_HAB=mk_mat('habaki','habaki',0.18,0.95,1.0)
+bm.normal_update(); habaki=new_obj('habaki',bm,[M_HAB])
 # ---------------- assemblage ----------------
 parts=[tresse,ame,fuchi,kas,sp0,sp1,habaki]+objs_menuki
 for o in parts:
