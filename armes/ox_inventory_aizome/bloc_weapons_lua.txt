@@ -1,0 +1,7 @@
+-- A coller dans ox_inventory/data/weapons.lua, juste apres le Katana Shiden
+		['WEAPON_KATANA_AIZOME'] = {
+			label = 'Katana Aizome',
+			description = "Lame d'acier poli aux vagues blanches, tresse indigo et garnitures d'or.",
+			weight = 1500,
+			durability = 0.1,
+		},

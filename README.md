@@ -18,3 +18,4 @@ Kit de fabrication des katanas add-on du serveur FiveM **Atsuo RP** (ESX Legacy 
 | Katana Kumo (193 / 423) | `armes/atsuo_katana_kumo/` | `armes/blender_katana_kumo/` | `armes/ox_inventory_kumo/` |
 | Katana Sakura (194 / 424) | `armes/atsuo_katana_sakura/` | `armes/blender_katana_sakura/` | `armes/ox_inventory_sakura/` |
 | Katana Shiden (252 / 482) | `armes/atsuo_katana_shiden/` | `armes/blender_katana_shiden/` | `armes/ox_inventory_shiden/` |
+| Katana Aizome (253 / 483) | `armes/atsuo_katana_aizome/` | `armes/blender_katana_aizome/` | `armes/ox_inventory_aizome/` |
