@@ -20,7 +20,8 @@ Config.GallopKeepMs = 1600               -- (rdr2) sans nouvel appui SHIFT, le g
 -- ============================================================
 --  PHYSIQUE (m/s, m/s², degres/s)
 -- ============================================================
-Config.Speed = { walk = 1.9, trot = 4.2, canter = 7.2, gallop = 11.5, reverse = 1.1 }
+Config.Speed = { walk = 1.9, trot = 4.2, canter = 7.2, gallop = 11.5, reverse = 0.9 }
+Config.ReverseAnimRate = 1.0   -- vitesse des pas en reculant (pattes trop rapides : baisse ; trop lentes : monte)
 Config.Accel      = 2.6     -- prise de vitesse (inertie)
 Config.Decel      = 3.2     -- ralentissement quand on relache Z
 Config.Brake      = 8.5     -- freinage avec S

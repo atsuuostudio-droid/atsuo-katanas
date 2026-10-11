@@ -120,13 +120,26 @@ local function horseClip()
     return clip, math.max(0.65, math.min(1.45, rate))
 end
 
-local function updateHorseAnim()
+-- recul : le cycle de marche est joue A L'ENVERS, image par image -> les pattes reculent une par une
+local backPhase, walkDur = 0.0, nil
+local function updateHorseAnim(dt)
     local clip, rate = horseClip()
-    if clip ~= curClip or not IsEntityPlayingAnim(horse, Config.HorseDict, clip, 3) then
+    local reverse = speed < 0 and clip == 'walk'
+    local key = reverse and 'walk_reverse' or clip
+    if key ~= curClip or not IsEntityPlayingAnim(horse, Config.HorseDict, clip, 3) then
         TaskPlayAnim(horse, Config.HorseDict, clip, 4.0, -4.0, -1, 1, 0.0, false, false, false)
-        curClip = clip
+        if reverse and curClip ~= 'walk_reverse' then backPhase = 0.0 end
+        curClip = key
     end
-    SetEntityAnimSpeed(horse, Config.HorseDict, clip, rate)
+    if reverse then
+        if not walkDur or walkDur <= 0 then walkDur = GetAnimDuration(Config.HorseDict, 'walk') end
+        local dur = (walkDur and walkDur > 0) and walkDur or 1.1
+        backPhase = (backPhase - dt * rate * Config.ReverseAnimRate / dur) % 1.0
+        SetEntityAnimSpeed(horse, Config.HorseDict, clip, 0.0)
+        SetEntityAnimCurrentTime(horse, Config.HorseDict, clip, backPhase)
+    else
+        SetEntityAnimSpeed(horse, Config.HorseDict, clip, rate)
+    end
 end
 
 local function updateRiderAnim(ped)
@@ -521,7 +534,7 @@ local function ride(now, dt)
         notify('~o~Ton cheval est epuise.')
     end
 
-    updateHorseAnim()
+    updateHorseAnim(dt)
     updateRiderAnim(ped)
 
     if Config.Debug then
@@ -612,4 +625,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.0.2 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.0.3 charge. /cheval ou H pour siffler.') end)
