@@ -6,7 +6,7 @@ Je t'envoie le kit Atsuo_Katanas_KIT.zip : lis 1_PROCEDURE_Katana_Atsuo.docx et 
 - plus la ressource atsuo_katana_<nom>, l'icône et le bloc ox_inventory.
 
 Nouvelle arme : Katana <NOM>
-Slot / order : 194 / 424 (voir 6_REGISTRE_ARMES.txt pour les suivants)
+Slot / order : 195 / 425 (voir 6_REGISTRE_ARMES.txt pour les suivants)
 Lame : A (celle du Kin) ou B (je t'envoie un .glb Tripo)
 Lueur de la lame : oui/non, couleur :
 Image de référence : (jointe)

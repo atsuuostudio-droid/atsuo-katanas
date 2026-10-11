@@ -1,0 +1,8 @@
+-- A coller dans ox_inventory/data/weapons.lua, juste apres le dernier katana
+-- (le bloc d'avant doit finir par },)
+		['WEAPON_KATANA_SAKURA'] = {
+			label = 'Katana Sakura',
+			description = "Lame noire et rose où dansent les pétales de cerisier, monture laquée de fleurs.",
+			weight = 1500,
+			durability = 0.1,
+		},

@@ -46,3 +46,11 @@ Scripts dans `kumo/` (chemins `/home/claude/kumo/...`). Même pipeline que le Ki
   `check_kumo.py` compare tsuba / axe / dos (Kumo : 0,26 cm, 0,06°, 0,11°).
 - Export test CWXML : créer le dossier `xmltest/` avant (`test_export_kumo.py`).
 - Pas de lueur : `EMISSIVE=0.0` dans `finitions_kumo.py` (shader normal_spec).
+
+## Katana Sakura (11/10/2026) — même base que le Kumo, lame haute qualité
+Scripts dans `sakura/` (chemins `/home/claude/sakura/...`, maillage de lame NS=170).
+- `tex_lame_sakura.py` : grille physique 0,04 mm/px (16750×875) puis **rééchantillonnage colonne par colonne vers v**
+  (fraction de largeur locale) → fleurs rondes même là où la lame s'affine ; sortie 8192×512.
+  Couches : acier noir violacé, brume rose, éclats diagonaux, hamon en vagues + liserés, pétales flous / traînées / pétales nets / fleurs, dos + gorge.
+- `sakura_draw.py` : fleurs de cerisier 5 pétales échancrés (couleur + relief) pour tsuba, habaki, fuchi/kashira.
+- Lueur : `normal_spec_emissive`, emissiveMultiplier 1.5 (comme le Kin).
