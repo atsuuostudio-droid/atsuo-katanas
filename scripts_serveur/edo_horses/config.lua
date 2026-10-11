@@ -76,6 +76,10 @@ Config.ArmStyles = {
 -- Reglable en jeu : /chevalmains 0.40 0.04 (sauvegarde auto). Mettre Config.ReinsIK = false pour couper.
 Config.ReinsIK = { forward = 0.40, up = 0.04, spread = 0.07 }
 
+-- Pieds dans les etriers (par rapport a la selle) : ecart sur les cotes / avant / hauteur.
+-- Reglable en jeu : /chevalpieds 0.36 0.05 -0.70 (sauvegarde auto). Mettre Config.StirrupsIK = false pour couper.
+Config.StirrupsIK = { out = 0.36, forward = 0.05, down = -0.70 }
+
 -- Position du cavalier sur le dos du cheval (reglable en jeu : /chevalselle x y z, sauvegarde auto)
 Config.RiderOffset   = vector3(0.0, -0.05, 0.28)
 Config.RiderRotation = vector3(0.0, 0.0, 0.0)

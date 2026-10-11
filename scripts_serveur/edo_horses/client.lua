@@ -143,6 +143,15 @@ local function updateHorseAnim(dt)
 end
 
 local armStyle = 1   -- une seule posture : renes
+local footX, footY, footZ = 0.36, 0.05, -0.70
+if Config.StirrupsIK then footX, footY, footZ = Config.StirrupsIK.out, Config.StirrupsIK.forward, Config.StirrupsIK.down end
+do
+    local kvp = GetResourceKvpString('edo_horses_feet')
+    if kvp then
+        local a, b, c = kvp:match('([%-%d%.]+) ([%-%d%.]+) ([%-%d%.]+)')
+        if a then footX, footY, footZ = tonumber(a), tonumber(b), tonumber(c) end
+    end
+end
 local handY, handZ = Config.ReinsIK and Config.ReinsIK.forward or 0.3, Config.ReinsIK and Config.ReinsIK.up or 0.2
 do
     local kvp = GetResourceKvpString('edo_horses_hands4')
@@ -178,6 +187,13 @@ local function updateRiderAnim(ped)
         for i, side in ipairs({ -1.0, 1.0 }) do
             local p = GetOffsetFromEntityInWorldCoords(horse, seatOffset.x + side * Config.ReinsIK.spread, seatOffset.y + hy, seatOffset.z + hz)
             SetIkTarget(ped, i == 1 and 3 or 4, 0, 0, p.x, p.y, p.z, 0, 150, 150)
+        end
+    end
+    -- IK des jambes : les pieds sont places a l'exterieur des flancs (dans les etriers), plus dans le cheval
+    if Config.StirrupsIK and horse then
+        for i, side in ipairs({ -1.0, 1.0 }) do
+            local p = GetOffsetFromEntityInWorldCoords(horse, seatOffset.x + side * footX, seatOffset.y + footY, seatOffset.z + footZ)
+            SetIkTarget(ped, i == 1 and 5 or 6, 0, 0, p.x, p.y, p.z, 0, 150, 150)
         end
     end
 end
@@ -398,6 +414,16 @@ RegisterCommand('chevalmains', function(_, a)
     SetResourceKvp('edo_horses_hands4', ('%.3f %.3f'):format(y, z))
     print(('[edo_horses] Config.ReinsIK forward = %.3f, up = %.3f'):format(y, z))
     notify('~g~Mains reglees et sauvegardees.')
+end, false)
+
+-- position des pieds (etriers) : /chevalpieds ecart avant hauteur   ex : /chevalpieds 0.36 0.05 -0.70
+RegisterCommand('chevalpieds', function(_, a)
+    local x, y, z = tonumber(a[1]), tonumber(a[2]), tonumber(a[3])
+    if not z then return notify(('Pieds : %.2f %.2f %.2f  (usage : /chevalpieds ecart avant hauteur)'):format(footX, footY, footZ)) end
+    footX, footY, footZ = x, y, z
+    SetResourceKvp('edo_horses_feet', ('%.3f %.3f %.3f'):format(x, y, z))
+    print(('[edo_horses] Config.StirrupsIK out = %.3f, forward = %.3f, down = %.3f'):format(x, y, z))
+    notify('~g~Pieds regles et sauvegardes.')
 end, false)
 
 -- posture des jambes : /chevaljambes 1 | 2 | 3
@@ -675,4 +701,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.1.2 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.1.3 charge. /cheval ou H pour siffler.') end)
