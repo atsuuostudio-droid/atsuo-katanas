@@ -4,10 +4,14 @@ from pose import solve, byname
 VARIANTS=[('ride_a',dict(flex=55,abd=38,shin_abd=10,shin_back=4,toe_out=12)),
           ('ride_b',dict(flex=52,abd=45,shin_abd=14,shin_back=4,toe_out=14)),
           ('ride_c',dict(flex=50,abd=52,shin_abd=18,shin_back=4,toe_out=16))]
-BONES=['SKEL_L_Thigh','SKEL_L_Calf','SKEL_L_Foot','SKEL_R_Thigh','SKEL_R_Calf','SKEL_R_Foot']
+BONES=['SKEL_Pelvis','SKEL_L_Thigh','SKEL_L_Calf','SKEL_L_Foot','SKEL_R_Thigh','SKEL_R_Calf','SKEL_R_Foot']
+# le jeu cherche les os par recherche binaire : la liste DOIT etre triee (piste puis id d'os), comme Sollumz
+BONES.sort(key=lambda n: byname[n]['tag'] | (1 << 16))
 clips=[]; anims=[]
 for name,P in VARIANTS:
     L=solve(P)
+    L['SKEL_Pelvis']=byname['SKEL_Pelvis']['q'].copy()   # bassin verrouille droit (sinon le calque du haut du corps le tord)
+    if L['SKEL_Pelvis'].w<0: L['SKEL_Pelvis'].negate()
     clips.append(f'''  <Item>
    <Hash>{name}</Hash>
    <Name>pack:/{name}.clip</Name>
