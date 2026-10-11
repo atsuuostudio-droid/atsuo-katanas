@@ -1,18 +1,15 @@
 import sys; sys.path.insert(0,'.')
 import pose
 from pose import solve, byname
-VARIANTS=[('ride_a',dict(flex=55,abd=38,shin_abd=10,shin_back=4,toe_out=12,r_sign=1)),
-          ('ride_b',dict(flex=52,abd=45,shin_abd=14,shin_back=4,toe_out=14,r_sign=1)),
-          ('ride_c',dict(flex=50,abd=52,shin_abd=18,shin_back=4,toe_out=16,r_sign=1))]
+VARIANTS=[('ride_a',dict(flex=55,abd=38,shin_abd=10,shin_back=4,toe_out=12)),
+          ('ride_b',dict(flex=52,abd=45,shin_abd=14,shin_back=4,toe_out=14)),
+          ('ride_c',dict(flex=50,abd=52,shin_abd=18,shin_back=4,toe_out=16))]
 BONES=['SKEL_L_Thigh','SKEL_L_Calf','SKEL_L_Foot','SKEL_R_Thigh','SKEL_R_Calf','SKEL_R_Foot']
 # le jeu cherche les os par recherche binaire : la liste DOIT etre triee (piste puis id d'os), comme Sollumz
 BONES.sort(key=lambda n: byname[n]['tag'] | (1 << 16))
 clips=[]; anims=[]
 for name,P in VARIANTS:
     L=solve(P)
-    # demande : jambe droite = EXACTEMENT les memes valeurs que la jambe gauche
-    for part in ('Thigh','Calf','Foot'):
-        L['SKEL_R_'+part]=L['SKEL_L_'+part].copy()
     clips.append(f'''  <Item>
    <Hash>{name}</Hash>
    <Name>pack:/{name}.clip</Name>
