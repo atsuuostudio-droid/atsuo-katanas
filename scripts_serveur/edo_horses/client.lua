@@ -4,6 +4,7 @@
 -- virages, montees, descentes) sur la vitesse reelle.
 
 local horse, horseNet = nil, nil
+local legDebug   -- defini plus bas (diagnostic)
 local mounted, busy = false, false
 local savedRagdoll = true
 
@@ -408,7 +409,7 @@ RegisterCommand('chevalmains', function(_, a)
 end, false)
 
 -- diagnostic : position reelle des os des jambes (F8 + console serveur)
-local function legDebug()
+legDebug = function()
     local ped = PlayerPedId()
     local bones = { {'LT',58271},{'LC',63931},{'LF',14201},{'LO',2108},{'RT',51826},{'RC',36864},{'RF',52301},{'RO',20781},{'PV',11816} }
     local out = {}
