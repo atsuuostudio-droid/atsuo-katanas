@@ -198,29 +198,42 @@ local function backMotion()
     return dz, pitch
 end
 
+-- PHYSIQUE DU CAVALIER : ressorts amortis (le corps suit le cheval avec un leger retard et un rebond naturel,
+-- comme le "secondary motion" des jeux recents) au lieu d'etre colle de facon rigide
+local SPR = { z = { x = 0.0, v = 0.0 }, p = { x = 0.0, v = 0.0 }, r = { x = 0.0, v = 0.0 } }
+local function spring(s, target, k, c, dt)
+    local steps = math.max(1, math.ceil(dt / 0.008))
+    local h = dt / steps
+    for _ = 1, steps do
+        local acc = k * (target - s.x) - c * s.v
+        s.v = s.v + acc * h
+        s.x = s.x + s.v * h
+    end
+    return s.x
+end
 local function riderBody(ped, band, phase, dt)
-    local bob = 0.0
+    local tz = 0.0
     local backDz, backPitch = backMotion()
     if backDz then
-        bob = math.max(-0.25, math.min(0.25, backDz)) + Config.SeatClearance
+        tz = math.max(-0.25, math.min(0.25, backDz))
     elseif band > 0 and BOB[band] and Config.RiderBob then
         local amp, f = BOB[band][1], BOB[band][2]
-        bob = amp * math.sin(2 * math.pi * f * phase)
+        tz = amp * math.sin(2 * math.pi * f * phase)
     end
+    tz = tz + Config.SeatClearance + (Config.GaitClearance[band] or 0.0)
     local accel = dt > 0 and (speed - lastSpeed) / dt or 0.0
     lastSpeed = speed
     local tRoll = math.max(-Config.RiderLeanMax, math.min(Config.RiderLeanMax, -yawRate * 0.10 * math.min(1.0, math.abs(speed) / 3.0)))
-    local tPitch = math.max(-6.0, math.min(6.0, accel * 1.2))
-    local k = math.min(1.0, dt * 4.0)
-    bodyRoll = bodyRoll + (tRoll - bodyRoll) * k
-    bodyPitch = bodyPitch + (tPitch - bodyPitch) * k
-    local key = ('%.3f %.2f %.2f %.2f'):format(bob, bodyRoll, bodyPitch, backPitch or 0.0)
-    if key ~= lastAttach then
-        AttachEntityToEntity(ped, horse, -1, seatOffset.x, seatOffset.y, seatOffset.z + bob,
-            seatRot.x + bodyPitch - (backPitch or 0.0), seatRot.y + bodyRoll, seatRot.z, false, false, false, true, 2, true)
-        lastAttach = key
-    end
-    return bob
+    local tPitch = math.max(-6.0, math.min(6.0, accel * 1.2)) - (backPitch or 0.0)
+    local P = Config.RiderPhysics
+    local z = spring(SPR.z, tz, P.heightStiff, P.heightDamp, dt)
+    local p = spring(SPR.p, tPitch, P.pitchStiff, P.pitchDamp, dt)
+    local r = spring(SPR.r, tRoll, P.rollStiff, P.rollDamp, dt)
+    -- le corps ne descend jamais sous la marge de securite (pas de traversee du dos)
+    if z < tz - P.maxSink then z = tz - P.maxSink; SPR.z.x = z; SPR.z.v = math.max(0.0, SPR.z.v) end
+    AttachEntityToEntity(ped, horse, -1, seatOffset.x, seatOffset.y, seatOffset.z + z,
+        seatRot.x + p, seatRot.y + r, seatRot.z, false, false, false, true, 2, true)
+    return z
 end
 
 local function updateRiderAnim(ped, dt)
@@ -338,6 +351,7 @@ local function mount()
     curClip, curRider = nil, nil
     mounted = true
     findBack()
+    for _, sp in pairs(SPR) do sp.x, sp.v = 0.0, 0.0 end
     SetPedLegIkMode(ped, 0)
     updateRiderAnim(ped)
 end
@@ -792,4 +806,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.4.1 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.5.0 charge. /cheval ou H pour siffler.') end)

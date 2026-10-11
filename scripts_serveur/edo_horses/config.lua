@@ -84,6 +84,14 @@ Config.HorseBackBones = {
     rear  = { 'SKEL_Pelvis', 'SKEL_Spine0', 'SKEL_Spine_Root' },
 }
 Config.SeatClearance = 0.03   -- marge au-dessus du dos (m) : plus = moins de contact avec le cheval
+Config.GaitClearance = { [0] = 0.0, 0.0, 0.01, 0.02, 0.03 }   -- marge en plus selon l'allure (arret, pas, trot, petit galop, galop)
+-- Physique du corps (ressorts amortis) : raideur = vitesse de reaction, amortissement = absence de rebond
+Config.RiderPhysics = {
+    heightStiff = 220.0, heightDamp = 20.0,   -- haut / bas : leger rebond apres chaque foulee
+    pitchStiff  = 90.0,  pitchDamp  = 13.0,   -- avant / arriere : le buste "suit" l'acceleration avec un temps de retard
+    rollStiff   = 70.0,  rollDamp   = 12.0,   -- cotes : le corps se penche dans les virages en douceur
+    maxSink     = 0.015,                     -- le corps ne s'enfonce jamais de plus de 1,5 cm sous la selle
+}
 Config.RiderLeanMax = 9.0     -- inclinaison max dans les virages (degres)
 
 -- Haut du corps : posture "renes" (mains serrees devant), jouee PAR-DESSUS la posture des jambes.
