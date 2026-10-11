@@ -142,7 +142,8 @@ local function updateHorseAnim(dt)
     end
 end
 
-local armStyle = tonumber(GetResourceKvpString('edo_horses_arms') or '') or Config.RiderArms
+local armStyle = tonumber(GetResourceKvpString('edo_horses_arms2') or '') or Config.RiderArms
+local legStyle = tonumber(GetResourceKvpString('edo_horses_legs') or '') or 1
 local function updateRiderAnim(ped)
     local band = bandOf(speed)
     local key = band == 0 and 'idle' or BAND_NAME[band]
@@ -150,6 +151,7 @@ local function updateRiderAnim(ped)
         if yawRate > 45.0 then key = 'leanL' elseif yawRate < -45.0 then key = 'leanR' end
     end
     local clip = Config.RiderAnim[key] or 'sit'
+    if clip == 'sit' then clip = Config.LegStyles[legStyle] or 'sit' end
     local changed = false
     if clip ~= curRider or not IsEntityPlayingAnim(ped, Config.RiderDict, clip, 3) then
         TaskPlayAnim(ped, Config.RiderDict, clip, 3.0, -3.0, -1, 1, 0.0, false, false, false)
@@ -371,17 +373,27 @@ RegisterCommand('chevalanim', function(_, a)
     TaskPlayAnim(horse, Config.HorseDict, a[1], 4.0, -4.0, 4000, 1, 0.0, false, false, false)
 end, false)
 
--- posture des bras : /chevalbras 1 (renes) | 2 (cowboy) | 3 (sans)
+-- posture des jambes : /chevaljambes 1 | 2 | 3
+RegisterCommand('chevaljambes', function(_, a)
+    local n = tonumber(a[1])
+    if not n or not Config.LegStyles[n] then return notify('Usage : /chevaljambes 1 | 2 | 3') end
+    legStyle = n
+    SetResourceKvp('edo_horses_legs', tostring(n))
+    curRider = nil
+    notify('~g~Jambes : ' .. Config.LegStyles[n])
+end, false)
+
+-- posture des bras : /chevalbras 1 (renes) | 2 (renes basses) | 3 (cowboy) | 4 (moto)
 RegisterCommand('chevalbras', function(_, a)
     local n = tonumber(a[1])
     if not n or n < 1 or n > #Config.ArmStyles + 1 then
-        return notify('Usage : /chevalbras 1 (renes) | 2 (cowboy) | 3 (sans)')
+        return notify('Usage : /chevalbras 1 (renes) | 2 (renes basses) | 3 (cowboy) | 4 (moto)')
     end
     local ped = PlayerPedId()
     local old = Config.ArmStyles[armStyle]
     if old then StopAnimTask(ped, old.dict, old.clip, 2.0) end
     armStyle = n
-    SetResourceKvp('edo_horses_arms', tostring(n))
+    SetResourceKvp('edo_horses_arms2', tostring(n))
     local st = Config.ArmStyles[n]
     if st then loadDict(st.dict) end
     curRider = nil
@@ -652,4 +664,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.0.5 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.0.6 charge. /cheval ou H pour siffler.') end)
