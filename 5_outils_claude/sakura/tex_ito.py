@@ -61,8 +61,8 @@ shadow=np.where(overA|overB|fold|win,0,shadow)
 h=cv2.GaussianBlur(h.astype(np.float32),(0,0),1.1)
 nrm=normal_from_height(h,4.0)
 # couleur ivoire soie
-base=np.array([128,30,74],np.float32)/255
-dk=np.array([60,16,38],np.float32)/255
+base=np.array([92,18,52],np.float32)/255
+dk=np.array([40,10,26],np.float32)/255
 prof=np.where(showA,profA,np.where(showB,profB,0.8))
 fib=np.where(showA,fibA,np.where(showB,fibB,0.5))
 tw=np.where(showA,twA,np.where(showB,twB,0.5))
