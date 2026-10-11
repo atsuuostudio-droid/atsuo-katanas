@@ -249,34 +249,50 @@ local function deleteHorse()
     TriggerServerEvent('edo_horses:forget')
 end
 
+local function log(msg) print('[edo_horses] ' .. msg) end
+
 local function spawnHorse(near)
     if GetResourceState('draft_horse') ~= 'started' then
+        log('ERREUR : draft_horse n\'est pas demarre.')
         return notify('~r~La ressource draft_horse n\'est pas demarree.')
     end
-    if not loadModel(Config.Model) then return notify('~r~Modele draft_horse introuvable.') end
+    log('chargement du modele draft_horse...')
+    if not IsModelInCdimage(Config.Model) then
+        log('ERREUR : modele draft_horse introuvable (le stream du pack ne s\'est pas charge).')
+        return notify('~r~Modele draft_horse introuvable (F8).')
+    end
+    if not loadModel(Config.Model) then
+        log('ERREUR : le modele met trop de temps a charger (textures de 68 Mo).')
+        return notify('~r~Le modele du cheval n\'a pas pu charger (F8).')
+    end
 
     local ped = PlayerPedId()
-    local dist = near and 6.0 or Config.SpawnBehind
+    local dist = near and 5.0 or Config.SpawnBehind
     local p = GetOffsetFromEntityInWorldCoords(ped, 0.0, -dist, 0.0)
-    local ok, safe = GetSafeCoordForPed(p.x, p.y, p.z, false, 16)
-    if not ok then
-        safe = p
-        local gz = groundAt(p.x, p.y, p.z + 30.0, p.z - 30.0)
-        if gz then safe = vector3(p.x, p.y, gz) end
-    end
-    horse = CreatePed(28, Config.Model, safe.x, safe.y, safe.z, GetEntityHeading(ped), true, true)
+    local pos = p
+    local gz = groundAt(p.x, p.y, p.z + 20.0, p.z - 20.0)
+    if gz then pos = vector3(p.x, p.y, gz + 0.5) end
+    local ok, safe = GetSafeCoordForPed(pos.x, pos.y, pos.z, false, 16)
+    if ok and #(safe - pos) < 12.0 then pos = safe end
+
+    horse = CreatePed(28, Config.Model, pos.x, pos.y, pos.z, GetEntityHeading(ped), true, true)
     SetModelAsNoLongerNeeded(Config.Model)
-    if not DoesEntityExist(horse) then horse = nil return notify('~r~Echec de creation du cheval.') end
+    if not horse or horse == 0 or not DoesEntityExist(horse) then
+        horse = nil
+        log('ERREUR : CreatePed a echoue.')
+        return notify('~r~Echec de creation du cheval (F8).')
+    end
     setupHorsePed(horse)
-    horseNet = NetworkGetNetworkIdFromEntity(horse)
-    SetNetworkIdCanMigrate(horseNet, false)
-    TriggerServerEvent('edo_horses:register', horseNet)
+    if NetworkGetEntityIsNetworked(horse) then
+        horseNet = NetworkGetNetworkIdFromEntity(horse)
+        SetNetworkIdCanMigrate(horseNet, false)
+        TriggerServerEvent('edo_horses:register', horseNet)
+    end
     stamina, exhausted = Config.MaxStamina, false
+    log(('cheval cree a %.1f m (%.1f %.1f %.1f)'):format(#(pos - GetEntityCoords(ped)), pos.x, pos.y, pos.z))
 end
 
-local function whistle()
-    if busy or mounted then return end
-    busy = true
+local function doWhistle()
     local ped = PlayerPedId()
     if not IsPedInAnyVehicle(ped, false) and loadDict('rcmnigel1c') then
         TaskPlayAnim(ped, 'rcmnigel1c', 'hailing_whistle_waive_a', 8.0, -8.0, 2200, 48, 0.0, false, false, false)
@@ -290,16 +306,26 @@ local function whistle()
     end
     if isAlive(horse) then
         releaseHorse()
-        grazing = false
         local d = #(GetEntityCoords(horse) - GetEntityCoords(ped))
-        TaskGoToEntity(horse, ped, -1, 2.2, d > 15.0 and 3.0 or 1.0, 1073741824, 0)
+        TaskGoToEntity(horse, ped, -1, 2.2, d > 12.0 and 3.0 or 1.0, 1073741824, 0)
         notify('~y~Ton cheval arrive.')
     end
-    busy = false
 end
 
-RegisterCommand(Config.Command, whistle, false)
-RegisterCommand('+edo_siffler', whistle, false)
+local function whistle()
+    if busy then return end
+    if mounted then return notify('Tu es deja a cheval.') end
+    busy = true
+    local ok, err = pcall(doWhistle)
+    busy = false
+    if not ok then
+        log('ERREUR : ' .. tostring(err))
+        notify('~r~Erreur cheval, regarde F8.')
+    end
+end
+
+RegisterCommand(Config.Command, function() whistle() end, false)
+RegisterCommand('+edo_siffler', function() whistle() end, false)
 RegisterCommand('-edo_siffler', function() end, false)
 RegisterKeyMapping('+edo_siffler', 'Siffler son cheval', 'keyboard', Config.WhistleKey)
 
@@ -570,3 +596,5 @@ exports('GetHorseEntity', function() return horse end)
 AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
+
+CreateThread(function() Wait(2000) log('EDO HORSES 1.0.1 charge. /cheval ou H pour siffler.') end)

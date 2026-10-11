@@ -70,7 +70,7 @@ Config.RiderRotation = vector3(0.0, 0.0, 0.0)
 -- ============================================================
 --  SIFFLET / APPARITION
 -- ============================================================
-Config.SpawnBehind     = 35.0   -- le cheval apparait derriere toi et arrive au galop
+Config.SpawnBehind     = 12.0   -- le cheval apparait derriere toi et te rejoint
 Config.TeleportDistance = 220.0 -- trop loin : il reapparait pres de toi
 Config.MountDistance   = 2.6
 Config.GrazeAfterMs    = 20000  -- seul et immobile : il broute
