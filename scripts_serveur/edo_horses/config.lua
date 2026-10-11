@@ -67,17 +67,14 @@ Config.RiderLean = true
 -- Jambes : variantes de la posture assise (changeable en jeu : /chevaljambes 1 | 2 | 3)
 Config.LegStyles = { 'sit', 'sit_high', 'sit_low' }
 
--- Haut du corps (bras + buste) joue PAR-DESSUS la posture des jambes.
--- Changeable en jeu : /chevalbras 1 | 2 | 3 | 4 (sauvegarde par joueur)
+-- Haut du corps : posture "renes" (mains serrees devant), jouee PAR-DESSUS la posture des jambes.
 Config.RiderArms = 1
 Config.ArmStyles = {
-    { name = 'renes',          dict = 'anim@move_m@prisoner_cuffed', clip = 'idle', ik = true }, -- mains serrees devant, remontees au-dessus des cuisses (IK)
-    { name = 'bras en avant',  dict = 'anim@heists@box_carry@',      clip = 'idle' },
-    { name = 'cowboy',         dict = 'timetable@mime@ig_1',         clip = 'cowboy_riding_horse' },
+    { name = 'renes', dict = 'anim@move_m@prisoner_cuffed', clip = 'idle', ik = true },
 }
 -- Point vise par les mains (par rapport a la selle) : avant / hauteur / ecart entre les mains.
--- Reglable en jeu : /chevalmains 0.32 0.18 (sauvegarde auto). Mettre Config.ReinsIK = false pour couper.
-Config.ReinsIK = { forward = 0.32, up = 0.18, spread = 0.07 }
+-- Reglable en jeu : /chevalmains 0.34 0.13 (sauvegarde auto). Mettre Config.ReinsIK = false pour couper.
+Config.ReinsIK = { forward = 0.34, up = 0.13, spread = 0.07 }
 
 -- Position du cavalier sur le dos du cheval (reglable en jeu : /chevalselle x y z, sauvegarde auto)
 Config.RiderOffset   = vector3(0.0, -0.05, 0.28)
