@@ -76,8 +76,8 @@ Config.ArmStyles = {
     { name = 'cowboy',         dict = 'timetable@mime@ig_1',         clip = 'cowboy_riding_horse' },
 }
 -- Point vise par les mains (par rapport a la selle) : avant / hauteur / ecart entre les mains.
--- Reglable en jeu : /chevalmains 0.30 0.20 (sauvegarde auto). Mettre Config.ReinsIK = false pour couper.
-Config.ReinsIK = { forward = 0.30, up = 0.20, spread = 0.07 }
+-- Reglable en jeu : /chevalmains 0.30 0.15 (sauvegarde auto). Mettre Config.ReinsIK = false pour couper.
+Config.ReinsIK = { forward = 0.30, up = 0.15, spread = 0.07 }
 
 -- Position du cavalier sur le dos du cheval (reglable en jeu : /chevalselle x y z, sauvegarde auto)
 Config.RiderOffset   = vector3(0.0, -0.05, 0.28)
