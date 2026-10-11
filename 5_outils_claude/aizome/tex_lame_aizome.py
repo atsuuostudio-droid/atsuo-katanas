@@ -3,7 +3,7 @@
 # On dessine dans une grille PHYSIQUE (pixels carrés, hauteur absolue au-dessus du tranchant),
 # puis chaque colonne est rééchantillonnée vers v (la lame s'affine vers la pointe : les fleurs restent rondes).
 import numpy as np, cv2, math, sys
-sys.path.insert(0,'/home/claude/aizome/scripts')
+sys.path.insert(0,'/home/claude/aizome2/scripts')
 from tex_common import *
 from blade_params import *
 rng=np.random.default_rng(77)
@@ -26,7 +26,7 @@ def lerp(a,b,t): return a+(b-a)*t
 def C(r,g,b): return np.array([r,g,b],np.float32)/255
 # ---------------- fond : acier noir violacé poli ----------------
 streak=gnoise(mm(9),mm(0.06),1)
-base=lerp(C(104,110,124),C(134,140,154),np.clip(0.5+0.25*streak,0,1)[...,None])
+base=lerp(C(98,116,148),C(130,148,180),np.clip(0.5+0.25*streak,0,1)[...,None])
 col=np.broadcast_to(base,(GH,GW,3)).copy()
 # ---------------- brume rose (nébuleuse) ----------------
 n1=gnoise(mm(14),mm(1.6),2); n2=gnoise(mm(4),mm(0.6),3); n3=gnoise(mm(1.2),mm(0.25),4)
@@ -35,7 +35,7 @@ mist=np.clip(0.45*n1+0.30*n2+0.12*n3+0.12,0,None)**1.3*band*0.55
 # plus dense vers la pointe et près du habaki
 mist*=1.0+0.6*np.exp(-((s-LB)/0.09)**2)+0.3*np.exp(-(s/0.05)**2)
 mist=np.clip(mist,0,0.85)
-col=lerp(col,C(196,206,222)[None,None],(mist*0.5)[...,None])
+col=lerp(col,C(170,192,228)[None,None],(mist*0.6)[...,None])
 # reflets diagonaux (éclats de lumière rose)
 for k in range(9):
     x0=rng.uniform(0.03,LB-0.03)/PX; ang=math.radians(rng.uniform(55,75)); wdt=mm(rng.uniform(2,6))
@@ -50,7 +50,7 @@ hb=hb+0.010*cv2.GaussianBlur(np.random.default_rng(5).normal(0,1,(1,GW)).astype(
 hbm=hb[None,:]
 # zone du tranchant : rose -> blanc rosé au fil
 t_edge=np.clip(fl/np.maximum(hbm,1e-3),0,1)
-edge_col=lerp(C(232,238,246)[None,None],C(196,204,218)[None,None],(t_edge**1.3)[...,None])
+edge_col=lerp(C(228,238,250)[None,None],C(176,196,228)[None,None],(t_edge**1.3)[...,None])
 edge_col=edge_col*(1+0.05*streak[...,None])
 ez=np.clip((hbm-fl)*GH*wcol[None,:]/W0/2.0+0.5,0,1)          # bord net (≈2 px)
 col=lerp(col,edge_col,ez[...,None])
@@ -159,7 +159,7 @@ pg=cv2.GaussianBlur(alpha_all,(0,0),mm(0.9))
 col=lerp(col,C(220,228,240)[None,None],(np.clip(pg-alpha_all,0,1)*0.55)[...,None])
 # ---------------- shinogi-ji (dos) + gorge ----------------
 shin=np.clip((fl-F_SHIN)*wcol[None,:]/PX/1.5+0.5,0,1)
-shin_col=lerp(C(62,68,80),C(90,96,110),np.clip(0.5+0.3*streak,0,1)[...,None])
+shin_col=lerp(C(44,56,80),C(72,88,118),np.clip(0.5+0.3*streak,0,1)[...,None])
 # reflet rose étiré le long du dos
 refl=np.exp(-((fl-0.83)/0.035)**2)*np.clip(0.5+0.5*gnoise(mm(25),mm(2),20),0,1)*0.35
 shin_col=lerp(shin_col,C(170,184,206)[None,None],refl[...,None])
@@ -176,7 +176,7 @@ col=lerp(col,C(210,218,232)[None,None],(sl_*0.5)[...,None])
 kis=np.clip((s-(LB-KL-0.01))/0.03,0,1)*(1-shin)*0.35
 col=lerp(col,C(226,232,242)[None,None],kis[...,None])
 # hors lame (au-dessus du dos à la pointe) : recopier la dernière ligne valide (évite les bavures)
-col=np.where(inb[...,None]>0,col,C(128,134,146)[None,None])
+col=np.where(inb[...,None]>0,col,C(98,116,148)[None,None])
 # ---------------- brillance ----------------
 spec=0.80+0.15*ez+0.10*waves-0.05*alpha_all+0.1*shin
 # ---------------- rééchantillonnage vers la vue UV (v = fraction locale) ----------------
@@ -189,12 +189,12 @@ map_y=(GH-0.5-hrow/PX).astype(np.float32)
 # antialias : réduire d'abord la grille horizontale
 out=cv2.remap(cv2.GaussianBlur(col.astype(np.float32),(0,0),sigmaX=GW/OW*0.5,sigmaY=0.6),map_x,map_y,cv2.INTER_LINEAR,borderMode=cv2.BORDER_REPLICATE)
 outs=cv2.remap(spec.astype(np.float32),map_x,map_y,cv2.INTER_LINEAR,borderMode=cv2.BORDER_REPLICATE)
-save_rgb('/home/claude/aizome/tex/lame_d.png',np.clip(out,0,1))
-save_gray('/home/claude/aizome/tex/lame_s.png',cv2.resize(np.clip(outs,0,1),(4096,256),interpolation=cv2.INTER_AREA))
-save_rgb('/home/claude/aizome/tex/lame_n.png',np.full((256,256,3),(128,128,255),np.uint8))
+save_rgb('/home/claude/aizome2/tex/lame_d.png',np.clip(out,0,1))
+save_gray('/home/claude/aizome2/tex/lame_s.png',cv2.resize(np.clip(outs,0,1),(4096,256),interpolation=cv2.INTER_AREA))
+save_rgb('/home/claude/aizome2/tex/lame_n.png',np.full((256,256,3),(128,128,255),np.uint8))
 # aperçus physiques (habaki et pointe)
 def prev(a,b,name):
     p=col[:,int(a/PX):int(b/PX)]; p=cv2.resize(p,(int(p.shape[1]*0.25),int(p.shape[0]*0.25)),interpolation=cv2.INTER_AREA)
-    cv2.imwrite('/home/claude/aizome/renders/'+name,cv2.cvtColor((np.clip(p,0,1)*255).astype(np.uint8),cv2.COLOR_RGB2BGR))
+    cv2.imwrite('/home/claude/aizome2/renders/'+name,cv2.cvtColor((np.clip(p,0,1)*255).astype(np.uint8),cv2.COLOR_RGB2BGR))
 prev(0,0.16,'lame_habaki.png'); prev(LB-0.16,LB,'lame_pointe.png')
 print('lame ok',len(items),'éléments')
