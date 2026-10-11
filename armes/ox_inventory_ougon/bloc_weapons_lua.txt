@@ -1,0 +1,7 @@
+-- A coller dans ox_inventory/data/weapons.lua, juste apres le Katana Akaguro
+		['WEAPON_KATANA_OUGON'] = {
+			label = 'Katana Ōgon',
+			description = "Lame d'or pur au hamon ondulé, tsuba laqué noir aux blasons et idéogrammes d'or.",
+			weight = 1500,
+			durability = 0.1,
+		},
