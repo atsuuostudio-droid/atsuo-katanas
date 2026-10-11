@@ -1,0 +1,7 @@
+-- A coller dans ox_inventory/data/weapons.lua, juste apres le Katana Sakura
+		['WEAPON_KATANA_SHIDEN'] = {
+			label = 'Katana Shiden',
+			description = "Lame noire parcourue d'éclairs violets, monture argent et fleurs violettes.",
+			weight = 1500,
+			durability = 0.1,
+		},

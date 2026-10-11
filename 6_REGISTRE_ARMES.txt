@@ -10,6 +10,7 @@ atsuo_katana_kin       WEAPON_KATANA_KIN       192 / 422
 atsuo_katana_kurokin / kurenai / hakuun / murasaki / hisui : numeros a reporter ici (pris hors kit)
 atsuo_katana_kumo      WEAPON_KATANA_KUMO      250 / 480
 atsuo_katana_sakura    WEAPON_KATANA_SAKURA    251 / 481
+atsuo_katana_shiden    WEAPON_KATANA_SHIDEN    252 / 482
 
-PROCHAINE ARME : 252 / 482   (puis 253 / 483, etc.)
+PROCHAINE ARME : 253 / 483   (puis 254 / 484, etc.)
 Pense a ajouter chaque nouvelle arme ici.
