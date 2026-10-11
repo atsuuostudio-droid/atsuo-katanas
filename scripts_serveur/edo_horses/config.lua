@@ -75,6 +75,9 @@ Config.LegStyles = {
     { name = 'test jambe droite A', dict = 'edo_riding', clip = 'ride_m2', single = true },
     { name = 'test jambe droite B', dict = 'edo_riding', clip = 'ride_m3', single = true },
     { name = 'test jambe droite C', dict = 'edo_riding', clip = 'ride_m4', single = true },
+    { name = 'test jambe gauche A', dict = 'edo_riding', clip = 'ride_l2', single = true },
+    { name = 'test jambe gauche B', dict = 'edo_riding', clip = 'ride_l3', single = true },
+    { name = 'test jambe gauche C', dict = 'edo_riding', clip = 'ride_l4', single = true },
 }
 
 -- Haut du corps : posture "renes" (mains serrees devant), jouee PAR-DESSUS la posture des jambes.
