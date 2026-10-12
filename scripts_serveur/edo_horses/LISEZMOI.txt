@@ -21,14 +21,14 @@ SHIFT (tape)    : allure superieure : trot > petit galop > galop.
 S               : freiner ; a l'arret, reculer.
 Q / D           : tourner (virage serre au pas, large au galop).
 /rangercheval   : renvoyer le cheval.
-/chevalallures 1|2 : allures du cheval. 1 = animations sur mesure (edo_cheval.ycd, defaut),
+/chevalallures 1|2 : allures du cheval. 1 = animations sur mesure (edo_cheval2.ycd, defaut),
                   2 = anciennes animations du cerf. Sauvegarde par joueur.
 /chevalselle x y z : regler la position du cavalier sur le dos (sauvegarde automatique).
 
 Style Ghost of Tsushima : dans config.lua, Config.ControlStyle = 'tsushima'
    (Z = trot, SHIFT maintenu = galop, CTRL maintenu = pas).
 
-ANIMATIONS DU CHEVAL (1.6.0, stream/edo_cheval.ycd)
+ANIMATIONS DU CHEVAL (1.6.1, stream/edo_cheval2.ycd)
 - Pas en 4 temps, trot diagonal, petit galop en 3 temps, galop en 4 temps avec temps de suspension.
 - Sabots poses au sol pendant l'appui, genoux et jarrets qui se plient pendant le soutien.
 - Dos, encolure, tete et queue qui bougent ; versions virage gauche/droite ; pietinement a l'arret.

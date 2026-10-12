@@ -106,6 +106,7 @@ def idle_frame(p,turn=0.0):
     for i,n in enumerate(['SKEL_Tail_01','SKEL_Tail_02','SKEL_Tail_03','SKEL_Tail_04','SKEL_Tail_05']):
         D[n]=R('Z',5*(i+1)*0.4*math.sin(2*w-0.8*i))@R('X',-0.5*(i+1))
     return D,0.004*math.sin(w)-0.002,{}
+FLIP=Matrix.Rotation(math.pi,3,'Z')   # le squelette du cerf regarde vers -Y : les anims du jeu le retournent (avant = +Y)
 def to_local_all(D):
     newW={}
     def wr(n):
@@ -119,6 +120,6 @@ def to_local_all(D):
     out={}
     for b in B:
         n=b['name']
-        if b['parent']<0: out[n]=b['q'].copy(); continue
+        if b['parent']<0: out[n]=(FLIP@b['q'].to_matrix()).to_quaternion(); continue
         out[n]=(wr(byidx[b['parent']]['name']).inverted()@wr(n)).to_quaternion()
     return out
