@@ -88,13 +88,13 @@ Config.HorseBackBones = {
     rear  = { 'SKEL_Pelvis', 'SKEL_Spine0', 'SKEL_Spine_Root' },
 }
 Config.SeatClearance = 0.03   -- marge au-dessus du dos (m) : plus = moins de contact avec le cheval
-Config.GaitClearance = { [0] = 0.0, 0.0, 0.0, 0.02, 0.06 }   -- corps qui se souleve selon l'allure (arret, pas, trot, petit galop, galop) : seulement au galop
+Config.GaitClearance = { [0] = 0.0, 0.0, 0.0, 0.0, 0.01 }   -- marge en plus selon l'allure (arret, pas, trot, petit galop, galop) : le corps reste assis
 -- part des secousses du dos transmise au corps (0 = immobile, 1 = suit tout) : leger au pas, fort au galop
-Config.BackFollow = { [0] = 0.3, 0.25, 0.45, 0.85, 1.0 }
+Config.BackFollow = { [0] = 0.3, 0.3, 0.6, 0.9, 1.0 }
 Config.BackSmooth = 0.6   -- (s) lissage de la hauteur moyenne du dos
 -- Physique du corps (ressorts amortis) : raideur = vitesse de reaction, amortissement = absence de rebond
 Config.RiderPhysics = {
-    heightStiff = 220.0, heightDamp = 20.0,   -- haut / bas : leger rebond apres chaque foulee
+    heightStiff = 260.0, heightDamp = 30.0,   -- haut / bas : le corps pese dans la selle (pas de rebond qui le fait decoller)
     pitchStiff  = 90.0,  pitchDamp  = 13.0,   -- avant / arriere : le buste "suit" l'acceleration avec un temps de retard
     rollStiff   = 70.0,  rollDamp   = 12.0,   -- cotes : le corps se penche dans les virages en douceur
     maxSink     = 0.015,                     -- le corps ne s'enfonce jamais de plus de 1,5 cm sous la selle
@@ -113,6 +113,8 @@ Config.ReinsIK = { forward = 0.40, up = 0.04, spread = 0.07 }
 
 -- Position du cavalier sur le dos du cheval (reglable en jeu : /chevalselle x y z, sauvegarde auto)
 Config.RiderOffset   = vector3(0.0, -0.08, 0.32)
+-- decalage de la selle selon le jeu d'animations du cheval (s'ajoute a /chevalselle) : x, y (- = vers l'arriere), z
+Config.DictSeatShift = { ['edo_cheval3'] = vector3(0.0, -0.33, -0.05) }
 Config.RiderRotation = vector3(0.0, 0.0, 0.0)
 
 -- ============================================================

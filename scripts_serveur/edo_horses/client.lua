@@ -168,6 +168,11 @@ local function boneLocal(name)
     local w = GetWorldPositionOfEntityBone(horse, idx)
     return idx, GetOffsetFromEntityGivenWorldCoords(horse, w.x, w.y, w.z)
 end
+local function seatShift()
+    local sh = Config.DictSeatShift and Config.DictSeatShift[Config.HorseDict]
+    return sh or vector3(0.0, 0.0, 0.0)
+end
+local backCalibAt = nil   -- la reference du dos est prise sur la pose de repos de NOS animations (stable)
 local function findBack()
     backBones, backRest = nil, nil
     local function first(list)
@@ -185,7 +190,7 @@ local function findBack()
     end
 end
 local function backMotion()
-    if not backBones then return nil, 0.0, 0.0 end
+    if not backBones or backCalibAt then return nil, 0.0, 0.0 end
     local function cur(b) local w = GetWorldPositionOfEntityBone(horse, b.idx) return GetOffsetFromEntityGivenWorldCoords(horse, w.x, w.y, w.z) end
     local m = cur(backBones.mid)
     local dz, dy = m.z - backRest.mid.z, m.y - backRest.mid.y
@@ -226,6 +231,11 @@ local function spring(s, target, k, c, dt)
 end
 local function riderBody(ped, band, phase, dt)
     local tz, ty = 0.0, 0.0
+    if backCalibAt and band == 0 and GetGameTimer() >= backCalibAt then
+        findBack()
+        backCalibAt = nil
+        ENV.z, ENV.y, ENV.p = nil, nil, nil
+    end
     local backDz, backPitch, backDy = backMotion()
     if backDz then
         local f = (Config.BackFollow and Config.BackFollow[band]) or 1.0
@@ -249,7 +259,8 @@ local function riderBody(ped, band, phase, dt)
     local r = spring(SPR.r, tRoll, P.rollStiff, P.rollDamp, dt)
     -- le corps ne descend jamais sous la marge de securite (pas de traversee du dos)
     if z < tz - P.maxSink then z = tz - P.maxSink; SPR.z.x = z; SPR.z.v = math.max(0.0, SPR.z.v) end
-    AttachEntityToEntity(ped, horse, -1, seatOffset.x, seatOffset.y + ty, seatOffset.z + z,
+    local sh = seatShift()
+    AttachEntityToEntity(ped, horse, -1, seatOffset.x + sh.x, seatOffset.y + sh.y + ty, seatOffset.z + sh.z + z,
         seatRot.x + p, seatRot.y + r, seatRot.z, false, false, false, true, 2, true)
     return z
 end
@@ -296,7 +307,8 @@ local function updateRiderAnim(ped, dt)
     -- IK des bras : les mains tiennent les renes au-dessus des cuisses (suivent le rebond du corps)
     if arms and arms.ik and Config.ReinsIK and horse then
         for i, side in ipairs({ -1.0, 1.0 }) do
-            local p = GetOffsetFromEntityInWorldCoords(horse, seatOffset.x + side * Config.ReinsIK.spread, seatOffset.y + handY, seatOffset.z + handZ + bob * 0.6)
+            local sh = seatShift()
+            local p = GetOffsetFromEntityInWorldCoords(horse, seatOffset.x + sh.x + side * Config.ReinsIK.spread, seatOffset.y + sh.y + handY, seatOffset.z + sh.z + handZ + bob * 0.6)
             SetIkTarget(ped, i == 1 and 3 or 4, 0, 0, p.x, p.y, p.z, 0, 150, 150)
         end
     end
@@ -306,7 +318,8 @@ end
 -- monter / descendre
 -- ------------------------------------------------------------
 local function attachRider(ped)
-    AttachEntityToEntity(ped, horse, -1, seatOffset.x, seatOffset.y, seatOffset.z,
+    local sh = seatShift()
+    AttachEntityToEntity(ped, horse, -1, seatOffset.x + sh.x, seatOffset.y + sh.y, seatOffset.z + sh.z,
         seatRot.x, seatRot.y, seatRot.z, false, false, false, true, 2, true)
 end
 
@@ -369,6 +382,7 @@ local function mount()
     curClip, curRider = nil, nil
     mounted = true
     findBack()
+    backCalibAt = GetGameTimer() + 700
     ENV.z, ENV.y, ENV.p = nil, nil, nil
     for _, sp in pairs(SPR) do sp.x, sp.v = 0.0, 0.0 end
     SetPedLegIkMode(ped, 0)
@@ -524,6 +538,7 @@ RegisterCommand('chevalallures', function(_, a)
     Config.HorseDict = Config.HorseDicts[n]
     loadDict(Config.HorseDict)
     walkDur, curClip = nil, nil
+    if mounted then backCalibAt = GetGameTimer() + 900 end
     SetResourceKvp('edo_horses_gaitdict', tostring(n))
     notify('~g~Allures : ' .. Config.HorseDict)
 end, false)
@@ -845,4 +860,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.6.3 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.6.4 charge. /cheval ou H pour siffler.') end)
