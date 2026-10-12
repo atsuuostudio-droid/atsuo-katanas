@@ -32,6 +32,14 @@ def move(name,pos):
 move('Gun_Muzzle',MUZZLE)
 move('NM_Butt_Marker',Vector((-0.205,0.0,-0.075)))
 bpy.ops.object.mode_set(mode='OBJECT')
+# collisions (boites du mousquet) etirees sur la longueur du tanegashima + affichees en fil de fer
+X0,X1=-0.2897,0.8242; N0,N1=-0.206,1.093
+for o in bpy.data.objects:
+    if o.sollum_type=='sollumz_bound_box':
+        mw=o.matrix_world; inv=mw.inverted()
+        for v in o.data.vertices:
+            w=mw@v.co; w.x=N0+(w.x-X0)*(N1-N0)/(X1-X0); w.z=w.z+0.012; v.co=inv@w
+        o.data.update(); o.display_type='WIRE'
 # conversion des materiaux en shaders GTA
 me.uv_layers[0].name='UVMap 0'
 bpy.ops.object.select_all(action='DESELECT'); model.select_set(True); bpy.context.view_layer.objects.active=model
