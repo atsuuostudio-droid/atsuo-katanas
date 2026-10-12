@@ -15,6 +15,7 @@ local hOff = 1.0                      -- hauteur du centre du cheval au-dessus d
 local posZ = 0.0
 local stamina, exhausted, lastDrain = Config.MaxStamina, false, 0
 local curClip, curRider = nil, nil
+local act = nil   -- animation en cours : monter / descendre / sauter
 local slope = 0.0
 local idleSince = 0
 local grazing = false
@@ -332,11 +333,128 @@ local function releaseHorse()
     idleSince = GetGameTimer()
 end
 
-local function dismount(thrown)
+-- ------------------------------------------------------------
+-- MONTER / DESCENDRE ANIMES (stream/edo_monte.ycd) : le corps suit une trajectoire fluide autour du cheval
+-- cles : t, ecart sur le cote, avant/arriere, hauteur (0 = debout au sol, 1 = selle), +dz, orientation (deg)
+-- ------------------------------------------------------------
+local ACT_KEYS = {
+    mount = {
+        { 0.00, 0.80, 0.05, 0.0, 0.00, -85 }, { 0.16, 0.70, 0.05, 0.0, 0.02, -85 },
+        { 0.34, 0.66, 0.05, 0.0, -0.06, -80 }, { 0.52, 0.42, 0.02, 1.0, 0.22, -60 },
+        { 0.70, 0.18, 0.00, 1.0, 0.20, -28 }, { 0.86, 0.03, 0.00, 1.0, 0.05, -6 },
+        { 1.00, 0.00, 0.00, 1.0, 0.00, 0 } },
+    dismount = {
+        { 0.00, 0.00, 0.00, 1.0, 0.00, 0 }, { 0.16, 0.02, 0.00, 1.0, 0.06, -5 },
+        { 0.38, 0.20, 0.00, 1.0, 0.20, -35 }, { 0.58, 0.55, 0.02, 0.45, 0.10, -80 },
+        { 0.78, 0.74, 0.04, 0.0, -0.14, -45 }, { 1.00, 0.80, 0.05, 0.0, 0.00, -15 } },
+    dismount_run = {
+        { 0.00, 0.00, 0.00, 1.0, 0.00, 0 }, { 0.30, 0.25, 0.00, 1.0, 0.12, -25 },
+        { 0.60, 0.75, 0.05, 0.4, 0.10, -15 }, { 0.80, 1.00, 0.10, 0.0, -0.15, -8 },
+        { 1.00, 1.05, 0.12, 0.0, 0.00, -5 } },
+}
+local function hermite(ts, vs, t)
+    local n = #ts
+    if t <= ts[1] then return vs[1] end
+    if t >= ts[n] then return vs[n] end
+    local i = 1
+    while ts[i + 1] < t do i = i + 1 end
+    local function m(j)
+        if j == 1 or j == n then return 0.0 end
+        return (vs[j + 1] - vs[j - 1]) / (ts[j + 1] - ts[j - 1])
+    end
+    local h = ts[i + 1] - ts[i]
+    local u = (t - ts[i]) / h
+    local u2, u3 = u * u, u * u * u
+    return vs[i] * (2 * u3 - 3 * u2 + 1) + m(i) * h * (u3 - 2 * u2 + u) + vs[i + 1] * (-2 * u3 + 3 * u2) + m(i + 1) * h * (u3 - u2)
+end
+local function wrap180(a) return (a + 180.0) % 360.0 - 180.0 end
+local function sideFree(side)
+    local p = GetEntityCoords(horse)
+    local q = GetOffsetFromEntityInWorldCoords(horse, -side * 1.3, 0.0, 0.0)
+    local h = StartExpensiveSynchronousShapeTestLosProbe(p.x, p.y, p.z, q.x, q.y, q.z, 1 + 16, horse, 7)
+    local _, hit = GetShapeTestResult(h)
+    return hit ~= 1
+end
+local function startAct(kind, side)
+    local ped = PlayerPedId()
+    local K = ACT_KEYS[kind]
+    local sh = seatShift()
+    local sx, sy, sz = seatOffset.x + sh.x, seatOffset.y + sh.y, seatOffset.z + sh.z
+    local standZ = (Config.StandHeight or 1.0) - hOff
+    local a = { kind = kind, side = side, t0 = GetGameTimer(), dur = Config.MountAnims[kind],
+                clip = kind .. (side > 0 and '_l' or '_r'), ts = {}, xs = {}, ys = {}, zs = {}, yaws = {} }
+    for i, k in ipairs(K) do
+        a.ts[i] = k[1]
+        a.xs[i] = sx - side * k[2]
+        a.ys[i] = sy + k[3]
+        a.zs[i] = standZ + (sz - standZ) * k[4] + k[5]
+        a.yaws[i] = k[6] * side
+    end
+    if kind == 'mount' then   -- on part de la position reelle du joueur
+        local pp = GetEntityCoords(ped)
+        local o = GetOffsetFromEntityGivenWorldCoords(horse, pp.x, pp.y, pp.z)
+        a.xs[1], a.ys[1], a.zs[1] = o.x, o.y, o.z
+        a.yaws[1] = a.yaws[2] + wrap180(GetEntityHeading(ped) - GetEntityHeading(horse) - a.yaws[2])
+    end
+    act = a
+    TaskPlayAnim(ped, Config.MountAnims.dict, a.clip, 6.0, -6.0, -1, 2, 0.0, false, false, false)
+end
+
+local dismount
+local function stepAct()
+    local ped = PlayerPedId()
+    local a = act
+    local t = (GetGameTimer() - a.t0) / (a.dur * 1000.0)
+    if t >= 1.0 then
+        act = nil
+        if a.kind == 'mount' then
+            curRider = nil
+            for _, sp in pairs(SPR) do sp.x, sp.v = 0.0, 0.0 end
+            updateRiderAnim(ped, 0.0)
+        else
+            local yaw = a.yaws[#a.yaws]
+            dismount(false, { clip = a.clip, heading = GetEntityHeading(horse) + yaw, run = a.kind == 'dismount_run', speed = a.speed or 0.0, side = a.side })
+        end
+        return
+    end
+    if not IsEntityPlayingAnim(ped, Config.MountAnims.dict, a.clip, 3) then
+        TaskPlayAnim(ped, Config.MountAnims.dict, a.clip, 8.0, -8.0, -1, 2, 0.0, false, false, false)
+    end
+    SetEntityAnimSpeed(ped, Config.MountAnims.dict, a.clip, 0.0)
+    SetEntityAnimCurrentTime(ped, Config.MountAnims.dict, a.clip, math.min(0.999, t))
+    AttachEntityToEntity(ped, horse, -1, hermite(a.ts, a.xs, t), hermite(a.ts, a.ys, t), hermite(a.ts, a.zs, t),
+        0.0, 0.0, hermite(a.ts, a.yaws, t), false, false, false, true, 2, true)
+end
+
+function dismount(thrown, soft)
     if not mounted then return end
     local ped = PlayerPedId()
     mounted = false
+    act = nil
     DetachEntity(ped, true, false)
+    if soft then
+        local p = GetEntityCoords(ped)
+        local gz = groundAt(p.x, p.y, p.z + 1.5, p.z - 4.0) or (p.z - 1.0)
+        SetEntityCoords(ped, p.x, p.y, gz, false, false, false, false)
+        SetEntityHeading(ped, soft.heading)
+        StopAnimTask(ped, Config.MountAnims.dict, soft.clip, 3.0)
+        SetEntityCollision(ped, true, true)
+        SetPedCanRagdoll(ped, savedRagdoll)
+        SetPedLegIkMode(ped, 2)
+        curRider = nil
+        if soft.run then
+            local fx, fy = fwdVec(GetEntityHeading(horse))
+            local v = soft.speed * 0.8
+            SetEntityVelocity(ped, fx * v - fy * soft.side * 0.8, fy * v + fx * soft.side * 0.8, 0.0)
+            if soft.speed > (Config.RollDismountSpeed or 8.0) then
+                SetPedCanRagdoll(ped, true)
+                SetPedToRagdoll(ped, 900, 1500, 0, false, false, false)
+            end
+        end
+        speed, yawRate, gait, vz = 0.0, 0.0, 0, 0.0
+        releaseHorse()
+        return
+    end
     ClearPedTasksImmediately(ped)
     SetEntityCollision(ped, true, true)
     SetPedCanRagdoll(ped, savedRagdoll)
@@ -359,9 +477,13 @@ local function mount()
     if IsEntityDead(ped) or IsPedInAnyVehicle(ped, false) then return end
     local arms = Config.ArmStyles[armStyle]
     if arms and arms.dict then loadDict(arms.dict) end
-    if not loadDict(legDict()) or not loadDict(Config.HorseDict) then
+    if not loadDict(legDict()) or not loadDict(Config.HorseDict) or not loadDict(Config.MountAnims.dict) then
         return notify('~r~Animations indisponibles.')
     end
+    -- cote : celui ou se trouve le joueur
+    local pp = GetEntityCoords(ped)
+    local po = GetOffsetFromEntityGivenWorldCoords(horse, pp.x, pp.y, pp.z)
+    local side = po.x <= 0.0 and 1 or -1
     -- hauteur naturelle du cheval au-dessus du sol (mesuree debout, avant de le piloter)
     local hp = GetEntityCoords(horse)
     local gz = groundAt(hp.x, hp.y, hp.z + 1.0, hp.z - 4.0)
@@ -376,17 +498,17 @@ local function mount()
     ClearPedTasksImmediately(ped)
     SetPedCanRagdoll(ped, false)
     SetEntityCollision(ped, false, false)
-    attachRider(ped)
 
     speed, yawRate, gait, vz = 0.0, 0.0, 0, 0.0
     curClip, curRider = nil, nil
     mounted = true
     findBack()
-    backCalibAt = GetGameTimer() + 700
+    backCalibAt = GetGameTimer() + math.floor(Config.MountAnims.mount * 1000) + 700
     ENV.z, ENV.y, ENV.p = nil, nil, nil
     for _, sp in pairs(SPR) do sp.x, sp.v = 0.0, 0.0 end
     SetPedLegIkMode(ped, 0)
-    updateRiderAnim(ped)
+    startAct('mount', side)
+    stepAct()
 end
 
 local function throwRider(force)
@@ -618,7 +740,7 @@ local function readInput(now)
     for i = 1, #DISABLED do DisableControlAction(0, DISABLED[i], true) end
     DisableControlAction(0, 30, true); DisableControlAction(0, 31, true)
     DisablePlayerFiring(PlayerId(), true)
-    if IsPauseMenuActive() or IsNuiFocused() then return false, false, 0.0, false, false end
+    if IsPauseMenuActive() or IsNuiFocused() or act then return false, false, 0.0, false, false, false end
 
     local ud = GetDisabledControlNormal(0, 31)
     local fwd = IsDisabledControlPressed(0, 32) or ud < -0.3
@@ -770,7 +892,7 @@ local function ride(now, dt)
     end
 
     updateHorseAnim(dt)
-    updateRiderAnim(ped, dt)
+    if act then stepAct() else updateRiderAnim(ped, dt) end
 
     if Config.Debug then
         SetTextFont(4); SetTextScale(0.34, 0.34); SetTextColour(255, 255, 255, 230); SetTextOutline()
@@ -780,8 +902,11 @@ local function ride(now, dt)
         EndTextCommandDisplayText(0.015, 0.80)
     end
 
-    if IsDisabledControlJustPressed(0, 51) or IsControlJustPressed(0, 51) then
-        if math.abs(speed) < 2.5 then dismount(false) else notify('Ralentis pour descendre.') end
+    if not act and (IsDisabledControlJustPressed(0, 51) or IsControlJustPressed(0, 51)) then
+        local side = sideFree(1) and 1 or (sideFree(-1) and -1 or 1)
+        local kind = math.abs(speed) < (Config.RunDismountSpeed or 2.0) and 'dismount' or 'dismount_run'
+        startAct(kind, side)
+        act.speed = math.abs(speed)
     end
 end
 
@@ -860,4 +985,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.6.4 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.7.0 charge. /cheval ou H pour siffler.') end)

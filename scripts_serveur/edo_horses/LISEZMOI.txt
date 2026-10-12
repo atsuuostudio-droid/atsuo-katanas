@@ -14,7 +14,11 @@ INSTALLATION
 COMMANDES / TOUCHES
 H ou /cheval    : siffler. Le cheval apparait derriere toi et arrive au galop
                   (s'il existe deja, il te rejoint).
-E               : monter / descendre (il faut etre presque a l'arret pour descendre).
+E               : monter / descendre, ANIME (stream/edo_monte.ycd) :
+                  - monter : pied a l'etrier, main sur le pommeau, impulsion, jambe par-dessus la croupe
+                    (cote gauche ou droit selon ou tu te tiens) ;
+                  - a l'arret / au pas lent : on glisse le long du flanc et on se recoit en douceur ;
+                  - en marche : on saute du cheval et on continue sur sa lancee ; au galop on roule au sol.
 Z               : avancer (au pas).
 SHIFT (tape)    : allure superieure : trot > petit galop > galop.
                   Le galop se maintient en tapotant SHIFT, comme dans Red Dead.
