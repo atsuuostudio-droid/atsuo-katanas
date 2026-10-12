@@ -126,6 +126,11 @@ Config.MountDistance   = 2.6
 -- monter / descendre animes (stream/edo_monte.ycd) : durees en secondes
 Config.MountAnims = { dict = 'edo_monte2', mount = 1.90, dismount = 1.45, dismount_run = 0.85 }
 Config.MountMoveSpeed = 1.3     -- le cheval avance pendant qu'on monte (0 = il reste immobile)
+-- mains posees sur le dos pendant qu'on monte / descend (relatif a la selle) :
+-- forward = vers l'avant (pommeau), up = hauteur (negatif = plus bas, contre le dos), spread = ecart gauche/droite
+-- windows = moment de l'animation (0 a 1) ou les mains sont posees
+Config.MountHands = { forward = 0.20, up = -0.14, spread = 0.10, blendIn = 180, blendOut = 220,
+                      windows = { mount = { 0.08, 0.72 }, dismount = { 0.10, 0.66 }, dismount_run = { 0.02, 0.32 } } }
 Config.StandHeight = 1.0        -- hauteur du centre du joueur debout au-dessus du sol
 Config.RunDismountSpeed = 2.0   -- au-dela : on saute du cheval en marche
 Config.RollDismountSpeed = 8.0  -- au-dela (galop) : on roule au sol a la reception

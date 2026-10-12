@@ -340,8 +340,8 @@ end
 local ACT_KEYS = {
     mount = {   -- facon RDR2 : marche a cote, agrippe, a plat ventre en travers de la selle, jambe par-dessus
         { 0.00, 0.75, 0.10, 0.0, 0.00, -20 }, { 0.12, 0.66, 0.08, 0.0, 0.02, -35 },
-        { 0.24, 0.62, 0.06, 0.0, -0.08, -45 }, { 0.40, 0.30, 0.02, 1.0, 0.16, -70 },
-        { 0.54, 0.26, 0.02, 1.0, 0.14, -70 }, { 0.70, 0.14, 0.00, 1.0, 0.16, -32 },
+        { 0.24, 0.62, 0.06, 0.0, -0.08, -45 }, { 0.40, 0.30, 0.02, 1.0, 0.09, -70 },
+        { 0.54, 0.26, 0.02, 1.0, 0.08, -70 }, { 0.70, 0.14, 0.00, 1.0, 0.13, -32 },
         { 0.85, 0.03, 0.00, 1.0, 0.04, -6 }, { 1.00, 0.00, 0.00, 1.0, 0.00, 0 } },
     dismount = {
         { 0.00, 0.00, 0.00, 1.0, 0.00, 0 }, { 0.16, 0.02, 0.00, 1.0, 0.06, -5 },
@@ -428,6 +428,28 @@ local function stepAct()
     SetEntityAnimCurrentTime(ped, Config.MountAnims.dict, a.clip, math.min(0.999, t))
     AttachEntityToEntity(ped, horse, -1, hermite(a.ts, a.xs, t), hermite(a.ts, a.ys, t), hermite(a.ts, a.zs, t),
         0.0, 0.0, hermite(a.ts, a.yaws, t), false, false, false, true, 2, true)
+    -- les mains s'appuient VRAIMENT sur le dos du cheval (la ou serait la selle), pas dans le vide
+    local win = Config.MountHands and Config.MountHands.windows[a.kind]
+    if win and t >= win[1] and t <= win[2] then
+        local H = Config.MountHands
+        local sh = seatShift()
+        local bz = 0.0
+        if backBones then   -- suit le dos qui bouge pendant que le cheval marche
+            local w = GetWorldPositionOfEntityBone(horse, backBones.mid.idx)
+            local o = GetOffsetFromEntityGivenWorldCoords(horse, w.x, w.y, w.z)
+            bz = math.max(-0.15, math.min(0.15, o.z - backRest.mid.z))
+        end
+        local baseZ = seatOffset.z + sh.z + H.up + bz
+        -- main du cote du joueur : sur le pommeau (avant de la selle) ; l'autre : sur le siege, cote oppose
+        local near = { seatOffset.x + sh.x - a.side * H.spread, seatOffset.y + sh.y + H.forward, baseZ }
+        local far  = { seatOffset.x + sh.x + a.side * H.spread, seatOffset.y + sh.y + H.forward - 0.16, baseZ - 0.02 }
+        local nearPart = a.side > 0 and 3 or 4     -- 3 = main gauche, 4 = main droite
+        local farPart  = a.side > 0 and 4 or 3
+        for _, it in ipairs({ { nearPart, near }, { farPart, far } }) do
+            local p = GetOffsetFromEntityInWorldCoords(horse, it[2][1], it[2][2], it[2][3])
+            SetIkTarget(ped, it[1], 0, 0, p.x, p.y, p.z, 0, H.blendIn, H.blendOut)
+        end
+    end
 end
 
 function dismount(thrown, soft)
@@ -989,4 +1011,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.7.1 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.7.2 charge. /cheval ou H pour siffler.') end)
