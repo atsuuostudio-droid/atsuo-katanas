@@ -88,7 +88,10 @@ Config.HorseBackBones = {
     rear  = { 'SKEL_Pelvis', 'SKEL_Spine0', 'SKEL_Spine_Root' },
 }
 Config.SeatClearance = 0.03   -- marge au-dessus du dos (m) : plus = moins de contact avec le cheval
-Config.GaitClearance = { [0] = 0.0, 0.0, 0.01, 0.02, 0.03 }   -- marge en plus selon l'allure (arret, pas, trot, petit galop, galop)
+Config.GaitClearance = { [0] = 0.0, 0.0, 0.0, 0.02, 0.06 }   -- corps qui se souleve selon l'allure (arret, pas, trot, petit galop, galop) : seulement au galop
+-- part des secousses du dos transmise au corps (0 = immobile, 1 = suit tout) : leger au pas, fort au galop
+Config.BackFollow = { [0] = 0.3, 0.25, 0.45, 0.85, 1.0 }
+Config.BackSmooth = 0.6   -- (s) lissage de la hauteur moyenne du dos
 -- Physique du corps (ressorts amortis) : raideur = vitesse de reaction, amortissement = absence de rebond
 Config.RiderPhysics = {
     heightStiff = 220.0, heightDamp = 20.0,   -- haut / bas : leger rebond apres chaque foulee

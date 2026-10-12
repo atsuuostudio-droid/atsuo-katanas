@@ -185,9 +185,10 @@ local function findBack()
     end
 end
 local function backMotion()
-    if not backBones then return nil, 0.0 end
+    if not backBones then return nil, 0.0, 0.0 end
     local function cur(b) local w = GetWorldPositionOfEntityBone(horse, b.idx) return GetOffsetFromEntityGivenWorldCoords(horse, w.x, w.y, w.z) end
-    local dz = cur(backBones.mid).z - backRest.mid.z
+    local m = cur(backBones.mid)
+    local dz, dy = m.z - backRest.mid.z, m.y - backRest.mid.y
     local pitch = 0.0
     if backBones.front and backBones.rear then
         local f, r = cur(backBones.front), cur(backBones.rear)
@@ -195,7 +196,19 @@ local function backMotion()
         local a = math.deg(math.atan(f.z - r.z, f.y - r.y)) - math.deg(math.atan(f0.z - r0.z, f0.y - r0.y))
         pitch = math.max(-15.0, math.min(15.0, a))
     end
-    return dz, pitch
+    return dz, pitch, dy
+end
+
+-- enveloppe du dos : suit le HAUT des foulees (le corps ne descend jamais dans le cheval),
+-- puis seule une partie des secousses est transmise au cavalier selon l'allure
+local ENV = { z = nil, y = nil, p = nil }
+local function envelope(key, v, dt)
+    local e = ENV[key]
+    if not e then ENV[key] = v return v end
+    if key == 'z' and v > e then e = e + (v - e) * math.min(1.0, dt * 25.0)
+    else e = e + (v - e) * math.min(1.0, dt / (Config.BackSmooth or 0.6)) end
+    ENV[key] = e
+    return e
 end
 
 -- PHYSIQUE DU CAVALIER : ressorts amortis (le corps suit le cheval avec un leger retard et un rebond naturel,
@@ -212,13 +225,18 @@ local function spring(s, target, k, c, dt)
     return s.x
 end
 local function riderBody(ped, band, phase, dt)
-    local tz = 0.0
-    local backDz, backPitch = backMotion()
+    local tz, ty = 0.0, 0.0
+    local backDz, backPitch, backDy = backMotion()
     if backDz then
-        tz = math.max(-0.25, math.min(0.25, backDz))
+        local f = (Config.BackFollow and Config.BackFollow[band]) or 1.0
+        local ez = envelope('z', backDz, dt)
+        tz = math.max(-0.25, math.min(0.25, ez + (backDz - ez) * f))
+        ty = math.max(-0.4, math.min(0.4, envelope('y', backDy, dt)))
+        local ep = envelope('p', backPitch, dt)
+        backPitch = ep + (backPitch - ep) * f
     elseif band > 0 and BOB[band] and Config.RiderBob then
-        local amp, f = BOB[band][1], BOB[band][2]
-        tz = amp * math.sin(2 * math.pi * f * phase)
+        local amp, fq = BOB[band][1], BOB[band][2]
+        tz = amp * math.sin(2 * math.pi * fq * phase)
     end
     tz = tz + Config.SeatClearance + (Config.GaitClearance[band] or 0.0)
     local accel = dt > 0 and (speed - lastSpeed) / dt or 0.0
@@ -231,7 +249,7 @@ local function riderBody(ped, band, phase, dt)
     local r = spring(SPR.r, tRoll, P.rollStiff, P.rollDamp, dt)
     -- le corps ne descend jamais sous la marge de securite (pas de traversee du dos)
     if z < tz - P.maxSink then z = tz - P.maxSink; SPR.z.x = z; SPR.z.v = math.max(0.0, SPR.z.v) end
-    AttachEntityToEntity(ped, horse, -1, seatOffset.x, seatOffset.y, seatOffset.z + z,
+    AttachEntityToEntity(ped, horse, -1, seatOffset.x, seatOffset.y + ty, seatOffset.z + z,
         seatRot.x + p, seatRot.y + r, seatRot.z, false, false, false, true, 2, true)
     return z
 end
@@ -351,6 +369,7 @@ local function mount()
     curClip, curRider = nil, nil
     mounted = true
     findBack()
+    ENV.z, ENV.y, ENV.p = nil, nil, nil
     for _, sp in pairs(SPR) do sp.x, sp.v = 0.0, 0.0 end
     SetPedLegIkMode(ped, 0)
     updateRiderAnim(ped)
@@ -826,4 +845,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.6.2 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.6.3 charge. /cheval ou H pour siffler.') end)
