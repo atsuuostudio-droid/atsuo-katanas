@@ -1348,4 +1348,4 @@ AddEventHandler('onResourceStop', function(res)
     end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.9.0 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.9.1 charge. /cheval ou H pour siffler.') end)

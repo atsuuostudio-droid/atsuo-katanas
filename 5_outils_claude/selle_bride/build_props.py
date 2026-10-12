@@ -11,7 +11,7 @@ ONLY=os.environ.get('ONLY')
 SADDLE_FIT=Matrix.Diagonal((1.32,0.95,0.80,1.0))
 ITEMS={
  # nom, glb, texture, echelle de base (k=1), point d'origine (modele), rotation de mise en place
- 'selle':('saddle','edo_selle_d.dds',0.62,Vector((0.0,0.0,0.691)),Matrix.Rotation(math.radians(-90),4,'Z')),
+ 'selle':('saddle_clean','edo_selle_d.dds',0.62,Vector((0.0,0.0,0.691)),Matrix.Rotation(math.radians(-90),4,'Z')),
  'bride':('bridle','edo_bride_d.dds',0.2546/0.555,Vector((-0.286,0.0,0.605)),
           Matrix(((0,1,0,0),(0,0,-1,0),(-1,0,0,0),(0,0,0,1)))),
 }
@@ -28,7 +28,7 @@ for item,(glb,tex,s0,orig,rot) in ITEMS.items():
         s=s0*k/100.0
         fit=SADDLE_FIT if item=='selle' else Matrix.Identity(4)
         ob.data.transform(fit@Matrix.Scale(s,4)@rot@Matrix.Translation(-orig))
-        name=f'edo_{item}2_k{k}' if item=='selle' else f'edo_{item}_k{k}'
+        name=f'edo_{item}3_k{k}' if item=='selle' else f'edo_{item}_k{k}'
         ob.name=name; ob.data.name=name
         # materiau : une seule texture diffuse (DDS)
         m=ob.data.materials[0]; m.name=f'edo_{item}'
