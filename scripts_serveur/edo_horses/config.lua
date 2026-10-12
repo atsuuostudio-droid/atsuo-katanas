@@ -127,9 +127,11 @@ Config.MountDistance   = 2.6
 Config.Tack = {
     enabled = true,
     range = 90.0,                               -- distance d'affichage (m)
-    sizes = { 100, 120, 140, 160, 180 },        -- tailles disponibles (choisie automatiquement)
+    sizes = { 100, 120, 140, 160, 180, 200, 220 },   -- tailles de selle (choisie en MESURANT le cheval)
+    bridleSizes = { 100, 120, 140, 160, 180 },       -- tailles de bride
+    pelvis = 0.10,                              -- hauteur du bassin du cavalier au-dessus du siege
     saddle = 'edo_selle2_k', bridle = 'edo_bride_k',
-    saddleOffset = vector3(0.0, 0.0, -0.04),    -- position de la selle par rapport au cavalier (z - = plus bas)
+    saddleOffset = vector3(0.0, 0.0, -0.04),    -- (seulement si la mesure est impossible) position par rapport au cavalier
     riderRaise = 0.025,                          -- le cavalier s'assoit SUR la selle (epaisseur du siege)
     bridleOffset = vector3(0.0, 0.0, 0.0),      -- y = le long de la tete (vers la bouche), z = hauteur
 }

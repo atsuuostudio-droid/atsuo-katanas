@@ -18,7 +18,11 @@ SELLE ET BRIDE (1.8.0)
 - /chevalharnais               : afficher / masquer selle et bride
 - /chevalharnais taille 140    : forcer une taille (100 120 140 160 180) ; /chevalharnais taille auto
 - /chevalharnais selle x y z   : deplacer la selle (ex : /chevalharnais selle 0 -0.05 -0.10)
-- La 1re fois, laisse le cheval immobile 3 secondes avant de monter : le script mesure son dos.
+- MESURE AUTOMATIQUE (1.9.0) : la 1re fois, laisse le cheval immobile 3 secondes, descendu.
+  Le script envoie des rayons sur son corps (profil du dos + largeur des flancs), choisit la taille
+  de selle, la pose juste derriere le garrot, a la bonne hauteur et a la bonne inclinaison,
+  et place le cavalier dans le creux du siege. Resultat dans la console F8 : "selle MESUREE ...".
+- /chevalharnais mesure        : refaire la mesure (cheval immobile, toi descendu)
 
 COMMANDES / TOUCHES
 H ou /cheval    : siffler. Le cheval apparait derriere toi et arrive au galop

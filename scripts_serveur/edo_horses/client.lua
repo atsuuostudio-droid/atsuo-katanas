@@ -169,11 +169,20 @@ local function boneLocal(name)
     local w = GetWorldPositionOfEntityBone(horse, idx)
     return idx, GetOffsetFromEntityGivenWorldCoords(horse, w.x, w.y, w.z)
 end
+local FIT = nil            -- selle mesuree sur le cheval : { pos, pitch, k }
+do
+    local k = GetResourceKvpString('edo_horses_fit1')
+    if k then
+        local v = {}
+        for n in k:gmatch('[-%d%.]+') do v[#v + 1] = tonumber(n) end
+        if #v == 5 then FIT = { pos = vector3(v[1], v[2], v[3]), pitch = v[4], k = math.floor(v[5] + 0.5) } end
+    end
+end
 local tack = {}            -- harnachement (selle + bride) par cheval : [ped] = { saddle, bridle, ks, kb, ... }
 local function seatShift()
     local sh = Config.DictSeatShift and Config.DictSeatShift[Config.HorseDict] or vector3(0.0, 0.0, 0.0)
     local t = horse and tack[horse]
-    if t and t.saddle and Config.Tack and Config.Tack.enabled then
+    if t and t.saddle and Config.Tack and Config.Tack.enabled and not FIT then
         sh = sh + vector3(0.0, 0.0, (Config.Tack.riderRaise or 0.03) * t.ks / 100.0)
     end
     return sh
@@ -1056,10 +1065,11 @@ do
     end
 end
 local tackOn = GetResourceKvpString('edo_horses_tackon') ~= '0'
-local function nearestSize(k)
+local function nearestSize(k, list)
+    list = list or Config.Tack.sizes
     if tackForce then return tackForce end
-    local best, bd = Config.Tack.sizes[1], 1e9
-    for _, sz in ipairs(Config.Tack.sizes) do
+    local best, bd = list[1], 1e9
+    for _, sz in ipairs(list) do
         if math.abs(sz - k) < bd then best, bd = sz, math.abs(sz - k) end
     end
     return best
@@ -1101,10 +1111,12 @@ local function addTack(h)
     if t.head and t.mouthL and t.mouthR then
         local hd = bonePos(h, t.head)
         local mo = (bonePos(h, t.mouthL) + bonePos(h, t.mouthR)) * 0.5
-        t.kb = nearestSize(#(mo - hd) / DEER_HEAD * 100.0)
+        t.kb = nearestSize(#(mo - hd) / DEER_HEAD * 100.0, Config.Tack.bridleSizes)
     else
         t.kb = t.ks
     end
+    if FIT and not tackForce then t.ks = FIT.k end
+    if t.kb > Config.Tack.bridleSizes[#Config.Tack.bridleSizes] then t.kb = Config.Tack.bridleSizes[#Config.Tack.bridleSizes] end
     tack[h] = t
     t.saddle = spawnProp(Config.Tack.saddle .. t.ks, h)
     if t.head and t.mouthL then t.bridle = spawnProp(Config.Tack.bridle .. t.kb, h) end
@@ -1116,11 +1128,18 @@ end
 local function updateTack(h, t)
     -- SELLE : meme reference que le cavalier, suit le dos
     if t.saddle and DoesEntityExist(t.saddle) then
-        local base = (h == horse) and seatOffset or Config.RiderOffset
-        local off = tackOff or Config.Tack.saddleOffset
         local dz, pitch, dy = backDelta(h, t.bb)
         dz, dy = dz or 0.0, dy or 0.0
-        local p = vector3(base.x + off.x, base.y + off.y + dy, base.z + off.z + dz)
+        local p
+        if FIT then   -- position MESUREE sur le cheval (+ petit reglage manuel eventuel)
+            local o = tackOff or vector3(0.0, 0.0, 0.0)
+            p = vector3(FIT.pos.x + o.x, FIT.pos.y + o.y + dy, FIT.pos.z + o.z + dz)
+            pitch = pitch + FIT.pitch
+        else
+            local base = (h == horse) and seatOffset or Config.RiderOffset
+            local off = tackOff or Config.Tack.saddleOffset
+            p = vector3(base.x + off.x, base.y + off.y + dy, base.z + off.z + dz)
+        end
         t.saddlePos, t.saddlePitch = p, pitch
         AttachEntityToEntity(t.saddle, h, -1, p.x, p.y, p.z, pitch, 0.0, 0.0, false, false, false, false, 2, true)
     end
@@ -1140,8 +1159,110 @@ local function updateTack(h, t)
         end
     end
 end
+
+-- ------------------------------------------------------------
+-- MESURE DU CHEVAL : rayons sur son corps (dos de l'arriere a l'avant, puis largeur sur les flancs)
+-- -> taille de selle, position derriere le garrot, hauteur exacte sur le dos, inclinaison, place du cavalier
+-- ------------------------------------------------------------
+-- dessous de la selle (modele) : (avancee, hauteur) en unites de taille, et largeur interieure
+local UNDER = { { 0.333, -0.032 }, { 0.238, -0.022 }, { 0.048, 0.0 }, { -0.048, 0.0 }, { -0.143, -0.004 }, { -0.238, -0.048 }, { -0.333, -0.018 } }
+local function innerHalfWidth(sc, d)       -- demi-largeur interieure de la selle a la profondeur d sous le dessus
+    local dm = d / (0.80 * sc)
+    local w = (dm < 0.24) and math.sqrt(math.max(0.0, 0.24 * 0.24 - (0.24 - dm) ^ 2)) or 0.24
+    return 1.32 * sc * w
+end
+local rayFlags = nil
+local function rayHit(h, a, b)
+    local wa = GetOffsetFromEntityInWorldCoords(h, a.x, a.y, a.z)
+    local wb = GetOffsetFromEntityInWorldCoords(h, b.x, b.y, b.z)
+    for _, fl in ipairs(rayFlags and { rayFlags } or { 8, 4, 12, 4294967295 }) do
+        local hd = StartExpensiveSynchronousShapeTestLosProbe(wa.x, wa.y, wa.z, wb.x, wb.y, wb.z, fl, PlayerPedId(), 7)
+        local _, hit, c, _, ent = GetShapeTestResult(hd)
+        if hit == 1 and ent == h then
+            rayFlags = fl
+            return GetOffsetFromEntityGivenWorldCoords(h, c.x, c.y, c.z)
+        end
+    end
+end
+local function topAt(h, y)
+    local p = rayHit(h, vector3(0.0, y, 3.0), vector3(0.0, y, -1.5))
+    return p and p.z or nil
+end
+local function measureHorse(h)
+    -- garrot : os SKEL_Spine3 (base de l'encolure), dans la pose debout de reference
+    local wb = firstBone(h, { 'SKEL_Spine3', 'SKEL_Neck_1' })
+    if not wb then return nil, 'os du garrot introuvable' end
+    local wy = bonePos(h, wb).y
+    local prof, n = {}, 0
+    for y = -1.6, 1.6, 0.1 do
+        local z = topAt(h, y)
+        if z then prof[#prof + 1] = ('%.1f:%.2f'):format(y, z) n = n + 1 end
+    end
+    if n < 5 then return nil, 'le rayon ne touche pas le cheval (collision introuvable)' end
+    print('[edo_horses] profil du dos (y:hauteur) : ' .. table.concat(prof, ' '))
+    local best
+    for _, k in ipairs(Config.Tack.sizes) do
+        local sc = 0.62 * k / 100.0
+        local oy = wy - 0.05 - 0.27 * sc                    -- pommeau juste derriere le garrot
+        -- inclinaison : droite du dos sous la selle
+        local zf, zr = topAt(h, oy + 0.28 * sc), topAt(h, oy - 0.28 * sc)
+        local m = (zf and zr) and (zf - zr) / (0.56 * sc) or 0.0
+        m = math.max(-0.35, math.min(0.35, m))
+        -- hauteur : le dessous ne doit rentrer nulle part dans le dos
+        local z0 = -99.0
+        for _, u in ipairs(UNDER) do
+            local yy, uz = u[1] * sc, u[2] * sc
+            local top = topAt(h, oy + yy)
+            if top then z0 = math.max(z0, top - uz - yy * m) end
+        end
+        if z0 < -50 then return nil, 'dos introuvable sous la selle' end
+        z0 = z0 + 0.008
+        -- largeur : les flancs doivent rester a l'interieur de la selle
+        local ok, worst = true, 0.0
+        for d = 0.03, 0.59 * 0.80 * sc, 0.05 do
+            local z = z0 - d
+            local L = rayHit(h, vector3(-2.5, oy, z), vector3(0.0, oy, z))
+            local R = rayHit(h, vector3(2.5, oy, z), vector3(0.0, oy, z))
+            local hw = math.max(L and math.abs(L.x) or 0.0, R and math.abs(R.x) or 0.0)
+            local gap = innerHalfWidth(sc, d) - (hw + 0.015)
+            if gap < worst then worst = gap end
+            if gap < 0 then ok = false end
+        end
+        best = { pos = vector3(0.0, oy, z0), pitch = math.deg(math.atan(m)), k = k, sc = sc, worst = worst }
+        if ok then break end
+    end
+    return best
+end
+local function applyFit(f)
+    FIT = { pos = f.pos, pitch = f.pitch, k = f.k }
+    tackOff = nil
+    SetResourceKvp('edo_horses_tackoff', '')
+    SetResourceKvp('edo_horses_fit1', ('%.4f %.4f %.4f %.3f %d'):format(f.pos.x, f.pos.y, f.pos.z, f.pitch, f.k))
+    -- le cavalier s'assoit dans le creux du siege
+    local sc = 0.62 * f.k / 100.0
+    seatOffset = vector3(0.0, f.pos.y - 0.03 * sc, f.pos.z + 0.04 * 0.80 * sc + (Config.Tack.pelvis or 0.10))
+    SetResourceKvp('edo_horses_seat3', ('%.3f %.3f %.3f'):format(seatOffset.x, seatOffset.y, seatOffset.z))
+    print(('[edo_horses] selle MESUREE : taille %d, position %.3f %.3f %.3f, inclinaison %.1f deg, cavalier %.3f %.3f %.3f%s')
+        :format(f.k, f.pos.x, f.pos.y, f.pos.z, f.pitch, seatOffset.x, seatOffset.y, seatOffset.z,
+            (f.worst or 0) < 0 and (' (cheval tres large : il manque %.0f cm)'):format(-f.worst * 100) or ''))
+    for hh in pairs(tack) do removeTack(hh) end
+end
+local function doMeasure(quiet)
+    if not isAlive(horse) or mounted then return false end
+    if not captureRef(horse) then return false end
+    local f, err = measureHorse(horse)
+    if f then
+        applyFit(f)
+        if not quiet then notify(('~g~Cheval mesure : selle taille %d posee sur le dos.'):format(f.k)) end
+        return true
+    end
+    print('[edo_horses] mesure impossible : ' .. tostring(err))
+    if not quiet then notify('~r~Mesure impossible : ' .. tostring(err)) end
+    return false
+end
+
 -- gestion : cherche les chevaux autour (toutes les secondes), met a jour chaque image
-local stillSince, lastRef = nil, nil
+local stillSince, lastRef, measuredOnce = nil, nil, false
 CreateThread(function()
     local lastScan = 0
     while true do
@@ -1167,7 +1288,10 @@ CreateThread(function()
                 if isAlive(horse) and not mounted and not grazing and not act and GetEntitySpeed(horse) < 0.05 then
                     stillSince = stillSince or now
                     if now - stillSince > 2500 and (not REF or now - (lastRef or 0) > 15000) then
-                        if captureRef(horse) then lastRef = now end
+                        if captureRef(horse) then
+                            lastRef = now
+                            if not FIT and not measuredOnce then measuredOnce = true doMeasure(true) end
+                        end
                     end
                 else
                     stillSince = nil
@@ -1185,7 +1309,12 @@ end)
 -- /chevalharnais            : afficher / masquer selle et bride
 -- /chevalharnais taille 140 : forcer la taille (100 120 140 160 180) | /chevalharnais taille auto
 -- /chevalharnais selle x y z : decaler la selle (sauvegarde)
+-- /chevalharnais mesure    : mesurer le cheval et poser la selle parfaitement (cheval immobile, descendu)
 RegisterCommand('chevalharnais', function(_, a)
+    if a[1] == 'mesure' then
+        if mounted then return notify('Descends du cheval et laisse-le immobile.') end
+        return doMeasure(false)
+    end
     if a[1] == 'taille' then
         tackForce = tonumber(a[2])
         SetResourceKvp('edo_horses_tacksize', tackForce and tostring(tackForce) or '')
@@ -1219,4 +1348,4 @@ AddEventHandler('onResourceStop', function(res)
     end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.8.1 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.9.0 charge. /cheval ou H pour siffler.') end)

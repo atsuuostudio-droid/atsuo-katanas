@@ -5,7 +5,7 @@ sys.path.insert(0,'/home/claude/tanegashima/scripts')
 from load_sollumz import load
 S='/tmp/claude-0/-home-user-atsuo-katanas/1d790993-5d56-5af0-a69e-ff68766c3d76/scratchpad/selle'
 load()
-KS=[100,120,140,160,180]
+KS=[int(x) for x in os.environ.get('KS','100,120,140,160,180').split(',')]
 ONLY=os.environ.get('ONLY')
 # selle : PLUS LARGE (cheval de trait), moins haute, un peu plus courte -> elle epouse le dos
 SADDLE_FIT=Matrix.Diagonal((1.32,0.95,0.80,1.0))
