@@ -124,7 +124,8 @@ Config.SpawnBehind     = 12.0   -- le cheval apparait derriere toi et te rejoint
 Config.TeleportDistance = 220.0 -- trop loin : il reapparait pres de toi
 Config.MountDistance   = 2.6
 -- monter / descendre animes (stream/edo_monte.ycd) : durees en secondes
-Config.MountAnims = { dict = 'edo_monte', mount = 1.75, dismount = 1.45, dismount_run = 0.85 }
+Config.MountAnims = { dict = 'edo_monte2', mount = 1.90, dismount = 1.45, dismount_run = 0.85 }
+Config.MountMoveSpeed = 1.3     -- le cheval avance pendant qu'on monte (0 = il reste immobile)
 Config.StandHeight = 1.0        -- hauteur du centre du joueur debout au-dessus du sol
 Config.RunDismountSpeed = 2.0   -- au-dela : on saute du cheval en marche
 Config.RollDismountSpeed = 8.0  -- au-dela (galop) : on roule au sol a la reception

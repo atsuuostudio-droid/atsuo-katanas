@@ -334,15 +334,15 @@ local function releaseHorse()
 end
 
 -- ------------------------------------------------------------
--- MONTER / DESCENDRE ANIMES (stream/edo_monte.ycd) : le corps suit une trajectoire fluide autour du cheval
+-- MONTER / DESCENDRE ANIMES (stream/edo_monte2.ycd) : le corps suit une trajectoire fluide autour du cheval
 -- cles : t, ecart sur le cote, avant/arriere, hauteur (0 = debout au sol, 1 = selle), +dz, orientation (deg)
 -- ------------------------------------------------------------
 local ACT_KEYS = {
-    mount = {
-        { 0.00, 0.80, 0.05, 0.0, 0.00, -85 }, { 0.16, 0.70, 0.05, 0.0, 0.02, -85 },
-        { 0.34, 0.66, 0.05, 0.0, -0.06, -80 }, { 0.52, 0.42, 0.02, 1.0, 0.22, -60 },
-        { 0.70, 0.18, 0.00, 1.0, 0.20, -28 }, { 0.86, 0.03, 0.00, 1.0, 0.05, -6 },
-        { 1.00, 0.00, 0.00, 1.0, 0.00, 0 } },
+    mount = {   -- facon RDR2 : marche a cote, agrippe, a plat ventre en travers de la selle, jambe par-dessus
+        { 0.00, 0.75, 0.10, 0.0, 0.00, -20 }, { 0.12, 0.66, 0.08, 0.0, 0.02, -35 },
+        { 0.24, 0.62, 0.06, 0.0, -0.08, -45 }, { 0.40, 0.30, 0.02, 1.0, 0.16, -70 },
+        { 0.54, 0.26, 0.02, 1.0, 0.14, -70 }, { 0.70, 0.14, 0.00, 1.0, 0.16, -32 },
+        { 0.85, 0.03, 0.00, 1.0, 0.04, -6 }, { 1.00, 0.00, 0.00, 1.0, 0.00, 0 } },
     dismount = {
         { 0.00, 0.00, 0.00, 1.0, 0.00, 0 }, { 0.16, 0.02, 0.00, 1.0, 0.06, -5 },
         { 0.38, 0.20, 0.00, 1.0, 0.20, -35 }, { 0.58, 0.55, 0.02, 0.45, 0.10, -80 },
@@ -419,6 +419,10 @@ local function stepAct()
     end
     if not IsEntityPlayingAnim(ped, Config.MountAnims.dict, a.clip, 3) then
         TaskPlayAnim(ped, Config.MountAnims.dict, a.clip, 8.0, -8.0, -1, 2, 0.0, false, false, false)
+    end
+    -- comme dans RDR2 : le cheval avance doucement pendant qu'on monte
+    if a.kind == 'mount' and (Config.MountMoveSpeed or 0.0) > 0.0 then
+        speed = Config.MountMoveSpeed * math.min(1.0, t / 0.25)
     end
     SetEntityAnimSpeed(ped, Config.MountAnims.dict, a.clip, 0.0)
     SetEntityAnimCurrentTime(ped, Config.MountAnims.dict, a.clip, math.min(0.999, t))
@@ -985,4 +989,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.7.0 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.7.1 charge. /cheval ou H pour siffler.') end)
