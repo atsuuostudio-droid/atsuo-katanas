@@ -6,6 +6,9 @@ from load_sollumz import load
 S='/tmp/claude-0/-home-user-atsuo-katanas/1d790993-5d56-5af0-a69e-ff68766c3d76/scratchpad/selle'
 load()
 KS=[100,120,140,160,180]
+ONLY=os.environ.get('ONLY')
+# selle : PLUS LARGE (cheval de trait), moins haute, un peu plus courte -> elle epouse le dos
+SADDLE_FIT=Matrix.Diagonal((1.32,0.95,0.80,1.0))
 ITEMS={
  # nom, glb, texture, echelle de base (k=1), point d'origine (modele), rotation de mise en place
  'selle':('saddle','edo_selle_d.dds',0.62,Vector((0.0,0.0,0.691)),Matrix.Rotation(math.radians(-90),4,'Z')),
@@ -14,6 +17,7 @@ ITEMS={
 }
 for o in list(bpy.data.objects): bpy.data.objects.remove(o)
 for item,(glb,tex,s0,orig,rot) in ITEMS.items():
+    if ONLY and item!=ONLY: continue
     for k in KS:
         for o in list(bpy.data.objects): bpy.data.objects.remove(o)
         bpy.ops.import_scene.gltf(filepath=f'{S}/in/{glb}.glb')
@@ -22,8 +26,9 @@ for item,(glb,tex,s0,orig,rot) in ITEMS.items():
         for o in list(bpy.data.objects):
             if o!=ob: bpy.data.objects.remove(o)
         s=s0*k/100.0
-        ob.data.transform(Matrix.Scale(s,4)@rot@Matrix.Translation(-orig))
-        name=f'edo_{item}_k{k}'
+        fit=SADDLE_FIT if item=='selle' else Matrix.Identity(4)
+        ob.data.transform(fit@Matrix.Scale(s,4)@rot@Matrix.Translation(-orig))
+        name=f'edo_{item}2_k{k}' if item=='selle' else f'edo_{item}_k{k}'
         ob.name=name; ob.data.name=name
         # materiau : une seule texture diffuse (DDS)
         m=ob.data.materials[0]; m.name=f'edo_{item}'

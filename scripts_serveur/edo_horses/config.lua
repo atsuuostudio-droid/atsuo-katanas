@@ -128,9 +128,9 @@ Config.Tack = {
     enabled = true,
     range = 90.0,                               -- distance d'affichage (m)
     sizes = { 100, 120, 140, 160, 180 },        -- tailles disponibles (choisie automatiquement)
-    saddle = 'edo_selle_k', bridle = 'edo_bride_k',
-    saddleOffset = vector3(0.0, 0.0, -0.12),    -- position de la selle par rapport au cavalier (z - = plus bas)
-    riderRaise = 0.03,                          -- le cavalier s'assoit SUR la selle (epaisseur du siege)
+    saddle = 'edo_selle2_k', bridle = 'edo_bride_k',
+    saddleOffset = vector3(0.0, 0.0, -0.04),    -- position de la selle par rapport au cavalier (z - = plus bas)
+    riderRaise = 0.025,                          -- le cavalier s'assoit SUR la selle (epaisseur du siege)
     bridleOffset = vector3(0.0, 0.0, 0.0),      -- y = le long de la tete (vers la bouche), z = hauteur
 }
 -- monter / descendre animes (stream/edo_monte.ycd) : durees en secondes

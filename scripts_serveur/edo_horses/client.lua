@@ -469,8 +469,8 @@ local function stepAct()
             -- selle presente : main du cote du joueur sur le POMMEAU, l'autre sur le TROUSSEQUIN
             local sc = 0.62 * tk.ks / 100.0
             local sp = tk.saddlePos
-            near = { sp.x - a.side * 0.05, sp.y + 0.26 * sc, sp.z + 0.25 * sc + 0.02 }
-            far  = { sp.x + a.side * 0.04, sp.y - 0.22 * sc, sp.z + 0.15 * sc + 0.02 }
+            near = { sp.x - a.side * 0.06, sp.y + 0.25 * sc, sp.z + 0.20 * sc + 0.02 }
+            far  = { sp.x + a.side * 0.05, sp.y - 0.21 * sc, sp.z + 0.12 * sc + 0.02 }
         else
             local bz = 0.0
             if backBones and REF then
@@ -1219,4 +1219,4 @@ AddEventHandler('onResourceStop', function(res)
     end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.8.0 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.8.1 charge. /cheval ou H pour siffler.') end)
