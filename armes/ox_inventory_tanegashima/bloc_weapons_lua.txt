@@ -1,0 +1,11 @@
+-- Dans ox_inventory/data/weapons.lua, le mousquet existe deja (['WEAPON_MUSKET']).
+-- Remplace son bloc par celui-ci (meme cle, juste le nom, la description et le poids changent) :
+		['WEAPON_MUSKET'] = {
+			label = 'Tanegashima',
+			description = "Mousquet a meche japonais : canon octogonal en fer, crosse en bois veine, platine et serpentin forges.",
+			weight = 3500,
+			durability = 0.05,
+			ammoname = 'ammo-musket',
+		},
+-- Image : copie WEAPON_MUSKET.png dans ox_inventory/web/images/ (remplace l'ancienne).
+-- Munitions : l'item 'ammo-musket' existe deja dans ox_inventory (data/items.lua).

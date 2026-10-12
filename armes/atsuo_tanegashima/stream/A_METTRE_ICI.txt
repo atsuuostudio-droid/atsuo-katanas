@@ -1,0 +1,3 @@
+Mets ici le fichier w_ar_musket.ydr exporte depuis Blender
+(Atsuo_Tanegashima_w_ar_musket.blend > touche A > File > Export > Sollumz, Native, Gen8).
+Le nom doit rester EXACTEMENT w_ar_musket.ydr : c'est ce qui remplace le mousquet de GTA.

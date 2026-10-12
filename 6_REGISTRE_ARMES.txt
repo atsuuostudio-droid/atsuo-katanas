@@ -17,5 +17,7 @@ atsuo_katana_ougon     WEAPON_KATANA_OUGON     255 / 485
 atsuo_katana_shikkoku  WEAPON_KATANA_SHIKKOKU  256 / 486
 atsuo_katana_kurogane  WEAPON_KATANA_KUROGANE  257 / 487   (Ōdachi Kurogane, grand espadon)
 
+atsuo_tanegashima      WEAPON_MUSKET (remplacement du modele w_ar_musket, pas de nouveaux numeros)
+
 PROCHAINE ARME : 258 / 488   (puis 259 / 489, etc.)
 Pense a ajouter chaque nouvelle arme ici.
