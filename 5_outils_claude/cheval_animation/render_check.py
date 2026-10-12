@@ -3,8 +3,9 @@ from PIL import Image, ImageDraw
 def fk3(Lq,dz):
     Wm={}
     for b in B:
-        M=Matrix.Translation(b['t'])@Lq[b['name']].to_matrix().to_4x4()
-        Wm[b['name']]=(Matrix.Translation((0,0,dz))@M) if b['parent']<0 else Wm[byidx[b['parent']]['name']]@M
+        t=body_trans(b['name'],dz) if b['name'] in BODYROOTS else b['t']
+        M=Matrix.Translation(t)@Lq[b['name']].to_matrix().to_4x4()
+        Wm[b['name']]=M if b['parent']<0 else Wm[byidx[b['parent']]['name']]@M
     return {n:m.translation for n,m in Wm.items()}
 gs=['walk','trot','canter','gallop','turn']; N=8
 im=Image.new('RGB',(N*230,len(gs)*260),'white'); d=ImageDraw.Draw(im)

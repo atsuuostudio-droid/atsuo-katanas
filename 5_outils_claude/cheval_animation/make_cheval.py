@@ -106,20 +106,25 @@ def idle_frame(p,turn=0.0):
     for i,n in enumerate(['SKEL_Tail_01','SKEL_Tail_02','SKEL_Tail_03','SKEL_Tail_04','SKEL_Tail_05']):
         D[n]=R('Z',5*(i+1)*0.4*math.sin(2*w-0.8*i))@R('X',-0.5*(i+1))
     return D,0.004*math.sin(w)-0.002,{}
-FLIP=Matrix.Rotation(math.pi,3,'Z')   # le squelette du cerf regarde vers -Y : les anims du jeu le retournent (avant = +Y)
+FLIP=Matrix.Rotation(math.pi,3,'Z')   # le squelette du cerf regarde vers -Y : on retourne le corps (avant = +Y) SOUS la racine
+BODYROOTS=('SKEL_Spine_Root','SKEL_PelvisRoot')
+ROOTT=by['SKEL_ROOT']['t']; ROOTR=by['SKEL_ROOT']['q'].to_matrix()
+def body_trans(n,dz):
+    p=FLIP@(W0[n].translation+Vector((0,0,dz)))
+    return ROOTR.inverted()@(p-ROOTT)
 def to_local_all(D):
     newW={}
     def wr(n):
         if n in newW: return newW[n]
         b=by[n]
-        if n in D: r_=D[n]@W0[n].to_3x3()
-        else:
-            par=byidx[b['parent']]['name'] if b['parent']>=0 else None
-            r_=(wr(par) if par else Matrix.Identity(3))@b['q'].to_matrix()
+        if b['parent']<0: r_=ROOTR.copy()
+        elif n in D: r_=FLIP@D[n]@W0[n].to_3x3()
+        elif n in BODYROOTS: r_=FLIP@W0[n].to_3x3()
+        else: r_=wr(byidx[b['parent']]['name'])@b['q'].to_matrix()
         newW[n]=r_; return r_
     out={}
     for b in B:
         n=b['name']
-        if b['parent']<0: out[n]=(FLIP@b['q'].to_matrix()).to_quaternion(); continue
+        if b['parent']<0: out[n]=b['q'].copy(); continue
         out[n]=(wr(byidx[b['parent']]['name']).inverted()@wr(n)).to_quaternion()
     return out

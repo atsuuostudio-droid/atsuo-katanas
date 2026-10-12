@@ -14,7 +14,7 @@ def chan(vals):
          <Offset value="{mn:.9g}" />
          <Values>{' '.join('%.7f'%v for v in vals)}</Values>
         </Item>'''
-POSB=['SKEL_ROOT','SKEL_Spine_Root','SKEL_PelvisRoot']
+POSB=['SKEL_Spine_Root','SKEL_PelvisRoot']
 ROOTR=by['SKEL_ROOT']['q'].to_matrix()
 def anim_xml(name,dur,frames,dzs):
     n=len(frames)
@@ -29,11 +29,7 @@ def anim_xml(name,dur,frames,dzs):
     seq=''
     for t,tr,b in tracks:
         if tr==0:
-            if b=='SKEL_ROOT':
-                t0=FLIP@by[b]['t']; vs=[t0.copy() for dz in dzs]
-            else:
-                off=ROOTR.inverted()@Vector((0,0,1))
-                vs=[by[b]['t']+off*dz for dz in dzs]
+            vs=[body_trans(b,dz) for dz in dzs]
             ch='\n'.join(chan([v[i] for v in vs]) for i in range(3))
         else:
             qs=[]; prev=None

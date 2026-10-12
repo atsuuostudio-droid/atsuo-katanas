@@ -51,10 +51,10 @@ Config.ExhaustedRecovery = 25.0   -- epuise : trot max jusqu'a ce seuil
 -- ============================================================
 --  ANIMATIONS
 -- ============================================================
--- Allures du cheval : animations sur mesure (stream/edo_cheval2.ycd) : pas 4 temps, trot diagonal,
+-- Allures du cheval : animations sur mesure (stream/edo_cheval3.ycd) : pas 4 temps, trot diagonal,
 -- petit galop 3 temps, galop 4 temps, sabots poses au sol, encolure / dos / queue qui bougent.
 -- Changeable en jeu : /chevalallures 1 (edo_cheval) | 2 (anciennes animations du cerf)  (sauvegarde par joueur)
-Config.HorseDicts = { 'edo_cheval2', 'creatures@deer@move' }
+Config.HorseDicts = { 'edo_cheval3', 'creatures@deer@move' }
 Config.HorseDict = Config.HorseDicts[1]
 -- vitesse "naturelle" de chaque animation : sert a caler les pattes sur la vitesse reelle
 -- (si les sabots glissent : monte la valeur ; s'ils pedalent trop vite : baisse-la)
