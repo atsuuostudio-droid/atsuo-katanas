@@ -74,9 +74,9 @@ Config.RiderLegs = 1
 Config.LegStyles = {
     -- corps VIVANT : une animation par allure (respiration, roulis au pas, rebond au trot, balancier au galop),
     -- calee image par image sur les foulees du cheval
-    { name = 'cavalier',        dict = 'edo_cavalier3', prefix = 'ride_b', gaits = true },
-    { name = 'cavalier serre',  dict = 'edo_cavalier3', prefix = 'ride_a', gaits = true },
-    { name = 'cavalier ecarte', dict = 'edo_cavalier3', prefix = 'ride_c', gaits = true },
+    { name = 'cavalier',        dict = 'edo_cavalier4', prefix = 'ride_b', gaits = true },
+    { name = 'cavalier serre',  dict = 'edo_cavalier4', prefix = 'ride_a', gaits = true },
+    { name = 'cavalier ecarte', dict = 'edo_cavalier4', prefix = 'ride_c', gaits = true },
     -- postures fixes (anciennes)
     { name = 'fixe',            dict = 'edo_cavalier',  clip = 'ride_b', single = true },
 }
@@ -134,10 +134,11 @@ Config.Tack = {
     saddleOffset = vector3(0.0, 0.0, -0.04),    -- (seulement si la mesure est impossible) position par rapport au cavalier
     riderRaise = 0.025,                          -- le cavalier s'assoit SUR la selle (epaisseur du siege)
     bridleOffset = vector3(0.0, 0.0, 0.0),      -- y = le long de la tete (vers la bouche), z = hauteur
+    followY = false,                            -- la selle ne glisse pas vers l'avant / l'arriere avec les animations
 }
--- monter / descendre animes (stream/edo_monte.ycd) : durees en secondes
-Config.MountAnims = { dict = 'edo_monte2', mount = 1.90, dismount = 1.45, dismount_run = 0.85 }
-Config.MountMoveSpeed = 1.3     -- le cheval avance pendant qu'on monte (0 = il reste immobile)
+-- monter / descendre animes (stream/edo_monte3.ycd) : durees en secondes
+Config.MountAnims = { dict = 'edo_monte3', mount = 2.0, dismount = 1.45, dismount_run = 0.85 }
+Config.MountMoveSpeed = 0.7     -- le cheval avance pendant qu'on monte (0 = il reste immobile)
 -- mains posees sur le dos pendant qu'on monte / descend (relatif a la selle) :
 -- forward = vers l'avant (pommeau), up = hauteur (negatif = plus bas, contre le dos), spread = ecart gauche/droite
 -- windows = moment de l'animation (0 a 1) ou les mains sont posees

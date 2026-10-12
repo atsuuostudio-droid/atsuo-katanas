@@ -54,22 +54,20 @@ def P(**kw):
     return d
 CLIPS={
  # MONTER : debout face au flanc, pied gauche a l'etrier, main sur le pommeau, impulsion, jambe droite par-dessus la croupe, on se pose
- # MONTER facon RDR2 (le cheval avance) : on marche a cote, on agrippe la selle, saut a plat ventre en travers
- # de la selle, jambes qui pendent, puis la jambe droite part tres haut par-dessus la croupe et on s'assoit
- 'mount': (1.90, [
+ # MONTER avec de VRAIS APPUIS : pied gauche dans l'etrier, main gauche sur le pommeau, main droite sur le troussequin,
+ # impulsion de la jambe droite, debout sur l'etrier, la jambe droite passe par-dessus la croupe, on s'assoit
+ 'mount': (2.0, [
    (0.00, P()),
-   (0.12, P(lean=8, head=-10, arm_near=(0.00,0.32,0.02), arm_far=(-0.14,0.34,0.06),
-            near=dict(flex=18,knee=30), far=dict(flex=-12,knee=20))),
-   (0.24, P(lean=18, pel=-6, head=-6, arm_near=(0.00,0.28,-0.04), arm_far=(-0.14,0.30,0.00),
-            near=dict(flex=40,knee=70,ankle=25), far=dict(flex=34,knee=62,ankle=22))),
-   (0.40, P(lean=62, head=-25, nod=-10, arm_near=(0.06,0.20,-0.30), arm_far=(-0.04,0.22,-0.28),
-            near=dict(flex=-8,knee=24,ankle=-20), far=dict(flex=-14,knee=34,ankle=-20))),
-   (0.54, P(lean=66, head=-28, nod=-10, roll=-4, arm_near=(0.06,0.20,-0.32), arm_far=(-0.02,0.22,-0.30),
-            near=dict(flex=10,knee=60,ankle=-10), far=dict(flex=-30,knee=20,ankle=-25))),
-   (0.70, P(lean=44, twist=-22, head=-10, roll=-8, arm_near=(0.06,0.26,-0.32), arm_far=(-0.02,0.26,-0.30),
-            near=dict(flex=20,knee=50,abd=20), far=dict(flex=-48,knee=26,abd=78,rot=12))),
-   (0.85, P(lean=14, twist=-6, head=0, arm_near=(0.06,0.32,-0.36), arm_far=(0.06,0.32,-0.36),
-            near=dict(flex=44,knee=56,abd=38), far=dict(flex=22,knee=58,abd=58))),
+   (0.14, P(lean=8, head=-6, arm_near=(0.00,0.30,0.00), arm_far=(-0.10,0.30,0.04),
+            near=dict(flex=72,knee=104,abd=16,ankle=-4), far=dict(flex=2,knee=6))),
+   (0.30, P(lean=14, pel=-4, head=-6, arm_near=(0.00,0.28,-0.06), arm_far=(-0.10,0.28,-0.02),
+            near=dict(flex=76,knee=112,abd=16,ankle=-4), far=dict(flex=26,knee=46,ankle=22))),
+   (0.48, P(lean=24, head=-4, arm_near=(0.04,0.26,-0.26), arm_far=(-0.06,0.26,-0.24),
+            near=dict(flex=12,knee=16,abd=10,ankle=-6), far=dict(flex=-6,knee=12,ankle=18))),
+   (0.66, P(lean=26, twist=-16, head=0, roll=-6, arm_near=(0.06,0.28,-0.32), arm_far=(-0.02,0.28,-0.30),
+            near=dict(flex=18,knee=30,abd=22), far=dict(flex=-34,knee=30,abd=70,rot=10))),
+   (0.83, P(lean=10, twist=-5, arm_near=(0.06,0.32,-0.36), arm_far=(0.06,0.32,-0.36),
+            near=dict(flex=34,knee=50,abd=40), far=dict(flex=28,knee=52,abd=46))),
    (1.00, 'RIDE')]),
  # DESCENDRE (arret) : on se penche, jambe droite par-dessus la croupe, on glisse le long du flanc, reception souple
  'dismount': (1.45, [

@@ -281,7 +281,7 @@ local function riderBody(ped, band, phase, dt)
         local f = (Config.BackFollow and Config.BackFollow[band]) or 1.0
         local ez = envelope('z', backDz, dt)
         tz = math.max(-0.25, math.min(0.25, ez + (backDz - ez) * f))
-        ty = math.max(-0.4, math.min(0.4, envelope('y', backDy, dt)))
+        ty = (Config.Tack and Config.Tack.followY) and math.max(-0.4, math.min(0.4, envelope('y', backDy, dt))) or 0.0
         local ep = envelope('p', backPitch, dt)
         backPitch = ep + (backPitch - ep) * f
     elseif band > 0 and BOB[band] and Config.RiderBob then
@@ -377,11 +377,11 @@ end
 -- cles : t, ecart sur le cote, avant/arriere, hauteur (0 = debout au sol, 1 = selle), +dz, orientation (deg)
 -- ------------------------------------------------------------
 local ACT_KEYS = {
-    mount = {   -- facon RDR2 : marche a cote, agrippe, a plat ventre en travers de la selle, jambe par-dessus
-        { 0.00, 0.75, 0.10, 0.0, 0.00, -20 }, { 0.12, 0.66, 0.08, 0.0, 0.02, -35 },
-        { 0.24, 0.62, 0.06, 0.0, -0.08, -45 }, { 0.40, 0.30, 0.02, 1.0, 0.09, -70 },
-        { 0.54, 0.26, 0.02, 1.0, 0.08, -70 }, { 0.70, 0.14, 0.00, 1.0, 0.13, -32 },
-        { 0.85, 0.03, 0.00, 1.0, 0.04, -6 }, { 1.00, 0.00, 0.00, 1.0, 0.00, 0 } },
+    mount = {   -- (sans selle) trajectoire de secours
+        { 0.00, 0.75, 0.10, 0.0, 0.00, -20 }, { 0.14, 0.62, 0.06, 0.0, 0.10, -82 },
+        { 0.30, 0.62, 0.06, 0.0, 0.04, -82 }, { 0.48, 0.42, 0.04, 1.0, 0.22, -72 },
+        { 0.66, 0.20, 0.00, 1.0, 0.18, -35 }, { 0.83, 0.04, 0.00, 1.0, 0.05, -8 },
+        { 1.00, 0.00, 0.00, 1.0, 0.00, 0 } },
     dismount = {
         { 0.00, 0.00, 0.00, 1.0, 0.00, 0 }, { 0.16, 0.02, 0.00, 1.0, 0.06, -5 },
         { 0.38, 0.20, 0.00, 1.0, 0.20, -35 }, { 0.58, 0.55, 0.02, 0.45, 0.10, -80 },
@@ -391,6 +391,12 @@ local ACT_KEYS = {
         { 0.60, 0.75, 0.05, 0.4, 0.10, -15 }, { 0.80, 1.00, 0.10, 0.0, -0.15, -8 },
         { 1.00, 1.05, 0.12, 0.0, 0.00, -5 } },
 }
+-- pied PROCHE (boule du pied) par rapport au centre du joueur, a chaque cle de la montee (calcule sur l'animation)
+-- true = debout DANS L'ETRIER (le corps est porte par l'etrier) ; 'sol' = pied vers l'etrier, l'autre pied reste au sol
+local MOUNT_FOOT = {
+    { -0.162, 0.025, -0.971, false }, { -0.311, 0.190, -0.633, 'sol' }, { -0.300, 0.176, -0.594, 'sol' },
+    { -0.309, 0.090, -0.951, true }, { -0.472, 0.085, -0.867, true }, { -0.651, 0.150, -0.682, false },
+    { -0.513, 0.115, -0.705, false } }
 local function hermite(ts, vs, t)
     local n = #ts
     if t <= ts[1] then return vs[1] end
@@ -428,6 +434,27 @@ local function startAct(kind, side)
         a.ys[i] = sy + k[3]
         a.zs[i] = standZ + (sz - standZ) * k[4] + k[5]
         a.yaws[i] = k[6] * side
+    end
+    local tk = tack[horse]
+    if kind == 'mount' and tk and tk.saddlePos then
+        -- VRAI APPUI : le pied proche est pose dans l'etrier de la selle
+        local sc = 0.62 * tk.ks / 100.0
+        local sp = tk.saddlePos
+        local st = vector3(sp.x - side * 0.469 * sc, sp.y + 0.064 * sc, sp.z - 0.534 * sc + 0.02)
+        a.stirrup = st
+        for i, f in ipairs(MOUNT_FOOT) do
+            if f[4] then
+                local yaw = math.rad(a.yaws[i])
+                local fx, fy = f[1] * side, f[2]
+                a.xs[i] = st.x - (fx * math.cos(yaw) - fy * math.sin(yaw))
+                a.ys[i] = st.y - (fx * math.sin(yaw) + fy * math.cos(yaw))
+                if f[4] == 'sol' then
+                    a.zs[i] = (Config.StandHeight or 1.0) - hOff - (i == 3 and 0.07 or 0.0)
+                else
+                    a.zs[i] = st.z - f[3]
+                end
+            end
+        end
     end
     if kind == 'mount' then   -- on part de la position reelle du joueur
         local pp = GetEntityCoords(ped)
@@ -1133,12 +1160,12 @@ local function updateTack(h, t)
         local p
         if FIT then   -- position MESUREE sur le cheval (+ petit reglage manuel eventuel)
             local o = tackOff or vector3(0.0, 0.0, 0.0)
-            p = vector3(FIT.pos.x + o.x, FIT.pos.y + o.y + dy, FIT.pos.z + o.z + dz)
+            p = vector3(FIT.pos.x + o.x, FIT.pos.y + o.y + (Config.Tack.followY and dy or 0.0), FIT.pos.z + o.z + dz)
             pitch = pitch + FIT.pitch
         else
             local base = (h == horse) and seatOffset or Config.RiderOffset
             local off = tackOff or Config.Tack.saddleOffset
-            p = vector3(base.x + off.x, base.y + off.y + dy, base.z + off.z + dz)
+            p = vector3(base.x + off.x, base.y + off.y + (Config.Tack.followY and dy or 0.0), base.z + off.z + dz)
         end
         t.saddlePos, t.saddlePitch = p, pitch
         AttachEntityToEntity(t.saddle, h, -1, p.x, p.y, p.z, pitch, 0.0, 0.0, false, false, false, false, 2, true)
@@ -1348,4 +1375,4 @@ AddEventHandler('onResourceStop', function(res)
     end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.9.1 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.9.2 charge. /cheval ou H pour siffler.') end)

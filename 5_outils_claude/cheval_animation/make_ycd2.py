@@ -9,9 +9,9 @@ def R(axis,deg): return Matrix.Rotation(math.radians(deg),3,axis)
 def dirrot(a,b):
     return Vector(a).normalized().rotation_difference(Vector(b).normalized()).to_matrix()
 def pos(n): return W0[n].translation
-LEGS={'a':dict(flex=55,abd=38,shin_abd=10,shin_back=4,toe_out=12),
-      'b':dict(flex=52,abd=45,shin_abd=14,shin_back=4,toe_out=14),
-      'c':dict(flex=50,abd=52,shin_abd=18,shin_back=4,toe_out=16)}
+LEGS={'a':dict(flex=34,abd=44,shin_abd=10,shin_back=22,toe_out=12),   # jambes le long des quartiers, talon sous la hanche, pied a l'etrier
+      'b':dict(flex=34,abd=50,shin_abd=12,shin_back=22,toe_out=14),
+      'c':dict(flex=34,abd=56,shin_abd=14,shin_back=22,toe_out=16)}
 # bras au repos : coude pres des cotes, avant-bras vers l'avant, mains devant le ventre (l'IK du script les ajuste)
 ARM={}
 for side,s in (('L',1),('R',-1)):
