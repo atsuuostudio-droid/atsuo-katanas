@@ -47,7 +47,7 @@ crosse=to_mesh(ob,M_BOIS,wooduv)
 bm=bmesh.new(); uvl=bm.loops.layers.uv.new('UVMap')
 xb0,_=P(705,0); xm,_=P(1975,0)
 R=0.0105; zc=P(0,237)[1]-0.002
-prof=[(xb0,R*1.02),(xb0+0.01,R),(P(1880,0)[0],R*0.96),(P(1882,0)[0],R*1.12),(xm-0.004,R*1.12),(xm,R*1.0)]
+prof=[(xb0,R*1.02),(xb0+0.01,R),(P(1878,0)[0],R*0.97),(P(1881,0)[0],R*1.45),(xm-0.004,R*1.45),(xm,R*1.32)]
 rings=[]
 for x,r in prof:
     rings.append([bm.verts.new((x,r*math.cos(2*math.pi*k/8+math.pi/8),zc+r*math.sin(2*math.pi*k/8+math.pi/8))) for k in range(8)])
@@ -67,12 +67,16 @@ def box(bm,c,s):
     r=bmesh.ops.create_cube(bm,size=1.0)
     for v in r['verts']: v.co=Vector((c[0]+v.co.x*s[0],c[1]+v.co.y*s[1],c[2]+v.co.z*s[2]))
 # guidon + hausse
-box(bm,(P(1915,0)[0],0,zc+R+0.010),(0.016,0.006,0.020)); box(bm,(P(1000,0)[0],0,zc+R+0.004),(0.012,0.010,0.008))
+box(bm,(P(1915,0)[0],0,zc+R*1.45+0.009),(0.014,0.006,0.020))          # guidon haut sur la bouche
+box(bm,(P(1010,0)[0],0,zc+R+0.003),(0.010,0.008,0.006))                 # hausse
+box(bm,((P(605,0)[0]+P(765,0)[0])/2,0,P(0,240)[1]),(P(765,0)[0]-P(605,0)[0],0.022,0.012))   # queue de culasse (fer sur la poignee)
+box(bm,((P(1310,0)[0]+P(1370,0)[0])/2,-0.0192,P(0,272)[1]),(P(1370,0)[0]-P(1310,0)[0],0.0012,0.010))   # plaquette du fut
+box(bm,((P(1310,0)[0]+P(1370,0)[0])/2, 0.0192,P(0,272)[1]),(P(1370,0)[0]-P(1310,0)[0],0.0012,0.010))
 # capucines (bandes) autour canon+fut
-for px,w in ((1015,0.022),(1866,0.018)):
-    x,_=P(px,0); box(bm,(x,0,P(0,275)[1]),(w,0.034,0.068))
+for px,w,top,bot in ((1015,0.024,222,302),(1866,0.020,222,312)):
+    x,_=P(px,0); zt=P(0,top)[1]; zb=P(0,bot)[1]; box(bm,(x,0,(zt+zb)/2),(w,0.041,zt-zb))
 # plaque de couche (talon) et embout du fut
-box(bm,(P(36,0)[0],0,P(0,410)[1]),(0.012,0.036,0.088))
+box(bm,(P(40,0)[0],0,P(0,414)[1]),(0.020,0.041,0.088))   # talon ferre
 # platine (cote -Y)
 plate=[(285,330),(300,312),(560,282),(745,268),(750,300),(560,312),(300,345)]
 for (a,b) in [(0,0)]:
@@ -105,8 +109,8 @@ serpentin=tube('serpentin',[(x,Y_SIDE,z) for x,z in serp],0.0028,M_FER)
 pivot=tube('pivot',[(P(375,318)[0],Y_SIDE,P(375,318)[1]),(P(375,318)[0],Y_SIDE-0.004,P(375,318)[1])],0.006,M_FER)
 detente=tube('detente',[(x,0,z) for x,z in (P(398,345),P(405,365),P(395,382),P(385,384))],0.0025,M_FER)
 pontet=tube('pontet',[(x,0,z) for x,z in (P(350,372),P(375,385),P(430,388),P(470,375),P(480,350))],0.0022,M_FER)
-baguette=tube('baguette',[(P(900,297)[0],0,P(900,297)[1]),(P(1945,297)[0],0,P(1945,297)[1])],0.0035,M_BOIS)
-bout=tube('bout_baguette',[(P(1915,297)[0],0,P(0,297)[1]),(P(1948,297)[0],0,P(0,297)[1])],0.0042,M_FER)
+baguette=tube('baguette',[(P(1250,298)[0],0,P(0,298)[1]),(P(1912,298)[0],0,P(0,298)[1])],0.0034,M_BOIS)
+bout=tube('bout_baguette',[(P(1905,298)[0],0,P(0,298)[1]),(P(1946,298)[0],0,P(0,298)[1])],0.0043,M_FER)
 # bassinet (godet) + couvercle
 bm=bmesh.new(); r_=bmesh.ops.create_cone(bm,cap_ends=True,segments=14,radius1=0.006,radius2=0.0095,depth=0.012)
 for v in r_['verts']: v.co=v.co+Vector((P(698,0)[0],Y_SIDE-0.004,P(0,226)[1]))
@@ -118,14 +122,38 @@ for px,py in ((300,330),(560,298),(735,282)):
     r_=bmesh.ops.create_uvsphere(bm,u_segments=10,v_segments=6,radius=0.003)
     x,z=P(px,py)
     for v in r_['verts']: v.co=Vector((x,Y_SIDE-0.0005+min(0,v.co.y)*0.5,z))+Vector((v.co.x,0,v.co.z))
-r_=bmesh.ops.create_cone(bm,cap_ends=True,segments=20,radius1=0.0145,radius2=0.0145,depth=0.002)
-x,z=P(172,386)
-for v in r_['verts']: v.co=Vector((x+v.co.x,-0.0198+v.co.z,z+v.co.y))
 me=bpy.data.meshes.new('garnitures'); bm.to_mesh(me); bm.free(); me.materials.append(M_FER)
 garn=link(bpy.data.objects.new('garnitures',me))
+# bloc a fente (karakuri) en relief sur la platine
+bmk=bmesh.new()
+box(bmk,((P(578,0)[0]+P(672,0)[0])/2,Y_SIDE-0.0035,P(0,284)[1]),(P(672,0)[0]-P(578,0)[0],0.006,P(0,270)[1]-P(0,298)[1]))
+box(bmk,((P(598,0)[0]+P(655,0)[0])/2,Y_SIDE-0.0068,P(0,284)[1]),(P(655,0)[0]-P(598,0)[0],0.0012,0.006))
+for px,py in ((760,282),(600,316)):
+    r_=bmesh.ops.create_uvsphere(bmk,u_segments=10,v_segments=6,radius=0.0035); x,z=P(px,py)
+    for v in r_['verts']: v.co=Vector((x+v.co.x,Y_SIDE-0.001+min(0,v.co.y)*0.5,z+v.co.z))
+me=bpy.data.meshes.new('karakuri'); bmk.to_mesh(me); bmk.free(); me.materials.append(M_FER); link(bpy.data.objects.new('karakuri',me))
+ressort=tube('ressort',[(P(365,316)[0],Y_SIDE-0.004,P(0,316)[1]),(P(592,316)[0],Y_SIDE-0.004,P(0,312)[1])],0.0022,M_FER)
+levier=tube('levier',[(x,Y_SIDE-0.004,z) for x,z in (P(682,265),P(682,238),P(690,232))],0.0018,M_FER)
+couvercle=tube('couvercle',[(x,Y_SIDE-0.004,z) for x,z in (P(678,212),P(722,212))],0.0016,M_FER)
+# mon : disque de fer perce de 5 trous (fleur)
+cu=bpy.data.curves.new('mon','CURVE'); cu.dimensions='2D'; cu.fill_mode='BOTH'; cu.extrude=0.0009; cu.resolution_u=4
+cx,cz=P(172,386)
+def circ(sp,r,ox,oz,n=24):
+    sp.points.add(n-1); sp.use_cyclic_u=True
+    for k in range(n): a=2*math.pi*k/n; sp.points[k].co=(ox+r*math.cos(a),oz+r*math.sin(a),0,1)
+circ(cu.splines.new('POLY'),0.0148,cx,cz,40)
+circ(cu.splines.new('POLY'),0.0026,cx,cz,12)
+for k in range(5):
+    a=math.pi/2+2*math.pi*k/5; circ(cu.splines.new('POLY'),0.0027,cx+0.0072*math.cos(a),cz+0.0072*math.sin(a),12)
+ob=link(bpy.data.objects.new('mon',cu)); ob.matrix_world=Matrix.Translation((0,-0.0197,0))@XZ
+mon=to_mesh(ob,M_FER,boxuv(0.05))
 # noeud de meche (cordon)
 noeud=tube('noeud',[(x,Y_SIDE,z) for x,z in (P(680,186),P(700,170),P(715,182),P(700,196),P(683,180),P(700,165))],0.0032,M_CORD)
-noeud2=tube('noeud2',[(x,Y_SIDE-0.002,z) for x,z in (P(455,282),P(470,272),P(480,290),P(462,300),P(452,286))],0.0030,M_CORD)
+ring=[]
+cx,cz=P(466,300)
+for k in range(13):
+    a=2*math.pi*k/12; ring.append((cx+0.0085*math.cos(a),Y_SIDE-0.004+0.004*math.sin(a),cz+0.0085*math.sin(a)))
+noeud2=tube('noeud2',ring,0.0026,M_CORD)
 # ---------------- assemblage ----------------
 for o in list(bpy.data.objects):
     if o.type=='MESH':

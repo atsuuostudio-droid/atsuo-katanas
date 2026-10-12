@@ -11,11 +11,11 @@ def noise(shape,sx,sy,seed):
 H,W=1024,2048
 yy,xx=np.mgrid[0:H,0:W].astype(np.float32)
 warp=noise((H,W),220,40,1)*18+noise((H,W),60,12,2)*4
-rings=np.sin((yy+warp)*0.12+noise((H,W),400,60,3)*3)
+rings=np.sin((yy+warp)*0.30+noise((H,W),400,60,3)*3)
 fine=noise((H,W),30,0.8,4)
 fig=np.clip(rings*0.5+0.5,0,1)**1.6
-base=np.array([84,36,20],np.float32)/255; dark=np.array([48,20,11],np.float32)/255; lite=np.array([118,56,30],np.float32)/255
-c=base[None,None]+(dark-base)[None,None]*(fig*0.45)[...,None]
+base=np.array([92,44,28],np.float32)/255; dark=np.array([44,19,11],np.float32)/255; lite=np.array([126,64,38],np.float32)/255
+c=base[None,None]+(dark-base)[None,None]*(fig**2*0.75)[...,None]
 c=c+(lite-c)*(np.clip(noise((H,W),90,30,5)*0.4,0,1)*0.6)[...,None]
 c=c*(1+0.07*fine)[...,None]
 # usure : coups, rayures et patine sombre
@@ -28,7 +28,7 @@ for i in range(600):
 dent=cv2.GaussianBlur(dent,(0,0),0.8)
 c=c*(1-0.35*dent[...,None])
 Hh=fig*0.15+fine*0.04-dent*0.5
-save_rgb(T+'bois_d.png',np.clip(c,0,1)); save_rgb(T+'bois_n.png',normal_from_height(Hh,3.0,wrap=True)); save_gray(T+'bois_s.png',np.clip(0.35+0.15*fig-0.3*dent,0,1))
+save_rgb(T+'bois_d.png',np.clip(c,0,1)); save_rgb(T+'bois_n.png',normal_from_height(Hh,3.0,wrap=True)); save_gray(T+'bois_s.png',np.clip(0.22+0.10*fig-0.2*dent,0,1))
 # ---- FER : fer patine gris, piqure, rouille legere (tuile 12 cm) ----
 S=1024; PXMM=S/120
 Hf=hammered((S,S),PXMM*1.2,rng,pits=1.5)
