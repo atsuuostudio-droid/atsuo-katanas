@@ -1,0 +1,7 @@
+-- A coller dans ox_inventory/data/weapons.lua, juste apres le Katana Shikkoku
+		['WEAPON_KATANA_KUROGANE'] = {
+			label = 'Ōdachi Kurogane',
+			description = "Immense espadon de fer brut : biseaux martelés, coeur noir rayé, garde rivetée et poignée de cuir.",
+			weight = 4500,
+			durability = 0.1,
+		},
