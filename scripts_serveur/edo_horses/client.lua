@@ -489,6 +489,26 @@ RegisterCommand(Config.StoreCommand, function()
     if horse then deleteHorse() notify('~y~Cheval renvoye.') end
 end, false)
 
+-- allures du cheval : /chevalallures 1 (sur mesure) | 2 (cerf d'origine)
+do
+    local saved = tonumber(GetResourceKvpString('edo_horses_gaitdict') or '')
+    if saved and Config.HorseDicts[saved] then Config.HorseDict = Config.HorseDicts[saved] end
+end
+RegisterCommand('chevalallures', function(_, a)
+    local n = tonumber(a[1])
+    if not n or not Config.HorseDicts[n] then
+        return notify(('Allures : %s  (usage : /chevalallures 1 sur mesure | 2 cerf)'):format(Config.HorseDict))
+    end
+    if isAlive(horse) and IsEntityPlayingAnim(horse, Config.HorseDict, curHorseClip or 'idle', 3) then
+        StopAnimTask(horse, Config.HorseDict, curHorseClip or 'idle', 2.0)
+    end
+    Config.HorseDict = Config.HorseDicts[n]
+    loadDict(Config.HorseDict)
+    walkDur, curClip = nil, nil
+    SetResourceKvp('edo_horses_gaitdict', tostring(n))
+    notify('~g~Allures : ' .. Config.HorseDict)
+end, false)
+
 -- test d'une animation du cheval (a pied, a cote de lui) : /chevalanim walk_turn_l
 RegisterCommand('chevalanim', function(_, a)
     if not isAlive(horse) or mounted or not a[1] then return notify('Usage : /chevalanim nom (descendu du cheval)') end
@@ -806,4 +826,4 @@ AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then deleteHorse() end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.5.0 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.6.0 charge. /cheval ou H pour siffler.') end)

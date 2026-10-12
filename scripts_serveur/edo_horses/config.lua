@@ -51,7 +51,11 @@ Config.ExhaustedRecovery = 25.0   -- epuise : trot max jusqu'a ce seuil
 -- ============================================================
 --  ANIMATIONS
 -- ============================================================
-Config.HorseDict = 'creatures@deer@move'
+-- Allures du cheval : animations sur mesure (stream/edo_cheval.ycd) : pas 4 temps, trot diagonal,
+-- petit galop 3 temps, galop 4 temps, sabots poses au sol, encolure / dos / queue qui bougent.
+-- Changeable en jeu : /chevalallures 1 (edo_cheval) | 2 (anciennes animations du cerf)  (sauvegarde par joueur)
+Config.HorseDicts = { 'edo_cheval', 'creatures@deer@move' }
+Config.HorseDict = Config.HorseDicts[1]
 -- vitesse "naturelle" de chaque animation : sert a caler les pattes sur la vitesse reelle
 -- (si les sabots glissent : monte la valeur ; s'ils pedalent trop vite : baisse-la)
 Config.AnimRefSpeed = { walk = 1.9, trot = 4.2, canter = 7.2, gallop = 11.5 }
