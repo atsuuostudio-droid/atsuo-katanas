@@ -169,40 +169,75 @@ local function boneLocal(name)
     local w = GetWorldPositionOfEntityBone(horse, idx)
     return idx, GetOffsetFromEntityGivenWorldCoords(horse, w.x, w.y, w.z)
 end
+local tack = {}            -- harnachement (selle + bride) par cheval : [ped] = { saddle, bridle, ks, kb, ... }
 local function seatShift()
-    local sh = Config.DictSeatShift and Config.DictSeatShift[Config.HorseDict]
-    return sh or vector3(0.0, 0.0, 0.0)
-end
-local backCalibAt = nil   -- la reference du dos est prise sur la pose de repos de NOS animations (stable)
-local function findBack()
-    backBones, backRest = nil, nil
-    local function first(list)
-        for _, n in ipairs(list) do local i, o = boneLocal(n) if i then return { name = n, idx = i }, o end end
+    local sh = Config.DictSeatShift and Config.DictSeatShift[Config.HorseDict] or vector3(0.0, 0.0, 0.0)
+    local t = horse and tack[horse]
+    if t and t.saddle and Config.Tack and Config.Tack.enabled then
+        sh = sh + vector3(0.0, 0.0, (Config.Tack.riderRaise or 0.03) * t.ks / 100.0)
     end
-    local mid, mo = first(Config.HorseBackBones.mid)
-    local front, fo = first(Config.HorseBackBones.front)
-    local rear, ro = first(Config.HorseBackBones.rear)
-    if mid then
-        backBones = { mid = mid, front = front, rear = rear }
-        backRest = { mid = mo, front = fo, rear = ro }
-        print(('[edo_horses] dos du cheval suivi : %s / %s / %s'):format(mid.name, front and front.name or '-', rear and rear.name or '-'))
+    return sh
+end
+local backCalibAt = nil   -- (obsolete, garde pour compatibilite)
+-- REFERENCE DU DOS : positions des os du dos quand le cheval est DEBOUT AU REPOS (animations normales du jeu).
+-- Prise automatiquement quand le cheval est immobile, sauvegardee, et jamais prise sur la pose brute.
+local REF = nil
+do
+    local k = GetResourceKvpString('edo_horses_backref2')
+    if k then
+        local v = {}
+        for n in k:gmatch('[-%d%.]+') do v[#v + 1] = tonumber(n) end
+        if #v == 7 then REF = { mid = vector3(v[1], v[2], v[3]), front = vector3(0.0, v[4], v[5]), rear = vector3(0.0, v[6], v[7]) } end
+    end
+end
+local function firstBone(h, list)
+    for _, n in ipairs(list) do
+        local i = GetEntityBoneIndexByName(h, n)
+        if i and i ~= -1 then return { name = n, idx = i } end
+    end
+end
+local function bonePos(h, b)
+    local w = GetWorldPositionOfEntityBone(h, b.idx)
+    return GetOffsetFromEntityGivenWorldCoords(h, w.x, w.y, w.z)
+end
+local function backBonesOf(h)
+    local mid = firstBone(h, Config.HorseBackBones.mid)
+    if not mid then return nil end
+    return { mid = mid, front = firstBone(h, Config.HorseBackBones.front), rear = firstBone(h, Config.HorseBackBones.rear) }
+end
+local function captureRef(h)
+    local bb = backBonesOf(h)
+    if not bb or not bb.front or not bb.rear then return false end
+    local m, f, r = bonePos(h, bb.mid), bonePos(h, bb.front), bonePos(h, bb.rear)
+    REF = { mid = m, front = f, rear = r }
+    SetResourceKvp('edo_horses_backref2', ('%.4f %.4f %.4f %.4f %.4f %.4f %.4f'):format(m.x, m.y, m.z, f.y, f.z, r.y, r.z))
+    return true
+end
+-- mouvement du dos par rapport a la reference : hauteur, avancee, tangage
+local function backDelta(h, bb)
+    if not bb or not REF then return nil, 0.0, 0.0 end
+    local m = bonePos(h, bb.mid)
+    local pitch = 0.0
+    if bb.front and bb.rear then
+        local f, r = bonePos(h, bb.front), bonePos(h, bb.rear)
+        local a = math.deg(math.atan(f.z - r.z, f.y - r.y)) - math.deg(math.atan(REF.front.z - REF.rear.z, REF.front.y - REF.rear.y))
+        pitch = math.max(-15.0, math.min(15.0, a))
+    end
+    return m.z - REF.mid.z, pitch, m.y - REF.mid.y
+end
+local function findBack()
+    backBones = horse and backBonesOf(horse) or nil
+    backRest = REF
+    if backBones then
+        print(('[edo_horses] dos du cheval suivi : %s / %s / %s (reference %s)'):format(backBones.mid.name,
+            backBones.front and backBones.front.name or '-', backBones.rear and backBones.rear.name or '-', REF and 'ok' or 'a prendre'))
     else
         print('[edo_horses] os du dos introuvables : rebond simule')
     end
 end
 local function backMotion()
-    if not backBones or backCalibAt then return nil, 0.0, 0.0 end
-    local function cur(b) local w = GetWorldPositionOfEntityBone(horse, b.idx) return GetOffsetFromEntityGivenWorldCoords(horse, w.x, w.y, w.z) end
-    local m = cur(backBones.mid)
-    local dz, dy = m.z - backRest.mid.z, m.y - backRest.mid.y
-    local pitch = 0.0
-    if backBones.front and backBones.rear then
-        local f, r = cur(backBones.front), cur(backBones.rear)
-        local f0, r0 = backRest.front, backRest.rear
-        local a = math.deg(math.atan(f.z - r.z, f.y - r.y)) - math.deg(math.atan(f0.z - r0.z, f0.y - r0.y))
-        pitch = math.max(-15.0, math.min(15.0, a))
-    end
-    return dz, pitch, dy
+    if not backBones or not REF then return nil, 0.0, 0.0 end
+    return backDelta(horse, backBones)
 end
 
 -- enveloppe du dos : suit le HAUT des foulees (le corps ne descend jamais dans le cheval),
@@ -232,11 +267,6 @@ local function spring(s, target, k, c, dt)
 end
 local function riderBody(ped, band, phase, dt)
     local tz, ty = 0.0, 0.0
-    if backCalibAt and band == 0 and GetGameTimer() >= backCalibAt then
-        findBack()
-        backCalibAt = nil
-        ENV.z, ENV.y, ENV.p = nil, nil, nil
-    end
     local backDz, backPitch, backDy = backMotion()
     if backDz then
         local f = (Config.BackFollow and Config.BackFollow[band]) or 1.0
@@ -433,16 +463,24 @@ local function stepAct()
     if win and t >= win[1] and t <= win[2] then
         local H = Config.MountHands
         local sh = seatShift()
-        local bz = 0.0
-        if backBones then   -- suit le dos qui bouge pendant que le cheval marche
-            local w = GetWorldPositionOfEntityBone(horse, backBones.mid.idx)
-            local o = GetOffsetFromEntityGivenWorldCoords(horse, w.x, w.y, w.z)
-            bz = math.max(-0.15, math.min(0.15, o.z - backRest.mid.z))
+        local near, far
+        local tk = tack[horse]
+        if tk and tk.saddlePos then
+            -- selle presente : main du cote du joueur sur le POMMEAU, l'autre sur le TROUSSEQUIN
+            local sc = 0.62 * tk.ks / 100.0
+            local sp = tk.saddlePos
+            near = { sp.x - a.side * 0.05, sp.y + 0.26 * sc, sp.z + 0.25 * sc + 0.02 }
+            far  = { sp.x + a.side * 0.04, sp.y - 0.22 * sc, sp.z + 0.15 * sc + 0.02 }
+        else
+            local bz = 0.0
+            if backBones and REF then
+                local dz = backDelta(horse, backBones)
+                bz = math.max(-0.15, math.min(0.15, dz or 0.0))
+            end
+            local baseZ = seatOffset.z + sh.z + H.up + bz
+            near = { seatOffset.x + sh.x - a.side * H.spread, seatOffset.y + sh.y + H.forward, baseZ }
+            far  = { seatOffset.x + sh.x + a.side * H.spread, seatOffset.y + sh.y + H.forward - 0.16, baseZ - 0.02 }
         end
-        local baseZ = seatOffset.z + sh.z + H.up + bz
-        -- main du cote du joueur : sur le pommeau (avant de la selle) ; l'autre : sur le siege, cote oppose
-        local near = { seatOffset.x + sh.x - a.side * H.spread, seatOffset.y + sh.y + H.forward, baseZ }
-        local far  = { seatOffset.x + sh.x + a.side * H.spread, seatOffset.y + sh.y + H.forward - 0.16, baseZ - 0.02 }
         local nearPart = a.side > 0 and 3 or 4     -- 3 = main gauche, 4 = main droite
         local farPart  = a.side > 0 and 4 or 3
         for _, it in ipairs({ { nearPart, near }, { farPart, far } }) do
@@ -516,6 +554,7 @@ local function mount()
     if gz then hOff = math.max(0.3, math.min(2.2, hp.z - gz)) end
     posZ = hp.z
 
+    if not REF and GetEntitySpeed(horse) < 0.3 then captureRef(horse) end
     ClearPedTasksImmediately(horse)
     FreezeEntityPosition(horse, true)       -- le script pilote le cheval : plus de poussee de l'IA
     grazing = false
@@ -529,7 +568,6 @@ local function mount()
     curClip, curRider = nil, nil
     mounted = true
     findBack()
-    backCalibAt = GetGameTimer() + math.floor(Config.MountAnims.mount * 1000) + 700
     ENV.z, ENV.y, ENV.p = nil, nil, nil
     for _, sp in pairs(SPR) do sp.x, sp.v = 0.0, 0.0 end
     SetPedLegIkMode(ped, 0)
@@ -686,7 +724,6 @@ RegisterCommand('chevalallures', function(_, a)
     Config.HorseDict = Config.HorseDicts[n]
     loadDict(Config.HorseDict)
     walkDur, curClip = nil, nil
-    if mounted then backCalibAt = GetGameTimer() + 900 end
     SetResourceKvp('edo_horses_gaitdict', tostring(n))
     notify('~g~Allures : ' .. Config.HorseDict)
 end, false)
@@ -1002,13 +1039,184 @@ CreateThread(function()
     end
 end)
 
+-- ------------------------------------------------------------
+-- HARNACHEMENT : selle + bride (stream/edo_selle_k*.ydr, edo_bride_k*.ydr, edo_sellerie.ytd/.ytyp)
+-- Pose sur TOUS les chevaux du modele (chaque joueur les voit), taille choisie en mesurant le squelette.
+-- La selle suit le dos (os du dos), la bride suit la tete (os de la tete et de la bouche).
+-- ------------------------------------------------------------
+local DEER_BODY, DEER_HEAD = 0.938, 0.2546   -- distances de reference du squelette (encolure-bassin, nuque-bouche)
+local tackForce = tonumber(GetResourceKvpString('edo_horses_tacksize') or '')
+local tackOff = nil
+do
+    local k = GetResourceKvpString('edo_horses_tackoff')
+    if k then
+        local v = {}
+        for n in k:gmatch('[-%d%.]+') do v[#v + 1] = tonumber(n) end
+        if #v == 3 then tackOff = vector3(v[1], v[2], v[3]) end
+    end
+end
+local tackOn = GetResourceKvpString('edo_horses_tackon') ~= '0'
+local function nearestSize(k)
+    if tackForce then return tackForce end
+    local best, bd = Config.Tack.sizes[1], 1e9
+    for _, sz in ipairs(Config.Tack.sizes) do
+        if math.abs(sz - k) < bd then best, bd = sz, math.abs(sz - k) end
+    end
+    return best
+end
+local function spawnProp(name, h)
+    local m = GetHashKey(name)
+    if not IsModelInCdimage(m) then return nil end
+    RequestModel(m)
+    local t = GetGameTimer() + 3000
+    while not HasModelLoaded(m) and GetGameTimer() < t do Wait(0) end
+    if not HasModelLoaded(m) then return nil end
+    local p = GetEntityCoords(h)
+    local o = CreateObject(m, p.x, p.y, p.z + 1.0, false, false, false)
+    SetModelAsNoLongerNeeded(m)
+    SetEntityCollision(o, false, false)
+    SetEntityCanBeDamaged(o, false)
+    SetEntityInvincible(o, true)
+    return o
+end
+local function removeTack(h)
+    local t = tack[h]
+    if not t then return end
+    for _, o in ipairs({ t.saddle, t.bridle }) do
+        if o and DoesEntityExist(o) then DeleteEntity(o) end
+    end
+    tack[h] = nil
+end
+local function addTack(h)
+    local t = { ks = 140, kb = 140 }
+    t.bb = backBonesOf(h)
+    t.head = firstBone(h, { 'SKEL_Head' })
+    t.mouthL = firstBone(h, { 'FB_L_Lip_Corner_000', 'FB_UpperLip_000', 'FB_Jaw_000' })
+    t.mouthR = firstBone(h, { 'FB_R_Lip_Corner_000', 'FB_UpperLip_000', 'FB_Jaw_000' })
+    -- taille : mesuree sur le squelette du cheval
+    if t.bb and t.bb.front and t.bb.rear and t.bb.front.name == 'SKEL_Neck_1' and t.bb.rear.name == 'SKEL_Pelvis' then
+        local f, r = bonePos(h, t.bb.front), bonePos(h, t.bb.rear)
+        t.ks = nearestSize(#(f - r) / DEER_BODY * 100.0)
+    end
+    if t.head and t.mouthL and t.mouthR then
+        local hd = bonePos(h, t.head)
+        local mo = (bonePos(h, t.mouthL) + bonePos(h, t.mouthR)) * 0.5
+        t.kb = nearestSize(#(mo - hd) / DEER_HEAD * 100.0)
+    else
+        t.kb = t.ks
+    end
+    tack[h] = t
+    t.saddle = spawnProp(Config.Tack.saddle .. t.ks, h)
+    if t.head and t.mouthL then t.bridle = spawnProp(Config.Tack.bridle .. t.kb, h) end
+    if h == horse then
+        print(('[edo_horses] harnachement : selle %s%d, bride %s%d'):format(Config.Tack.saddle, t.ks, Config.Tack.bridle, t.kb))
+        if not t.saddle then print('[edo_horses] ATTENTION : modele de selle introuvable (stream / ytyp ?)') end
+    end
+end
+local function updateTack(h, t)
+    -- SELLE : meme reference que le cavalier, suit le dos
+    if t.saddle and DoesEntityExist(t.saddle) then
+        local base = (h == horse) and seatOffset or Config.RiderOffset
+        local off = tackOff or Config.Tack.saddleOffset
+        local dz, pitch, dy = backDelta(h, t.bb)
+        dz, dy = dz or 0.0, dy or 0.0
+        local p = vector3(base.x + off.x, base.y + off.y + dy, base.z + off.z + dz)
+        t.saddlePos, t.saddlePitch = p, pitch
+        AttachEntityToEntity(t.saddle, h, -1, p.x, p.y, p.z, pitch, 0.0, 0.0, false, false, false, false, 2, true)
+    end
+    -- BRIDE : orientee comme la tete (de la nuque vers la bouche)
+    if t.bridle and DoesEntityExist(t.bridle) then
+        local hd = bonePos(h, t.head)
+        local mo = (bonePos(h, t.mouthL) + bonePos(h, t.mouthR)) * 0.5
+        local u = mo - hd
+        local len = #u
+        if len > 0.01 then
+            u = u / len
+            local pitch = math.deg(math.asin(math.max(-1.0, math.min(1.0, u.z))))
+            local yaw = math.deg(math.atan(-u.x, u.y))
+            local B = Config.Tack.bridleOffset
+            local p = hd + u * B.y + vector3(0.0, 0.0, B.z)
+            AttachEntityToEntity(t.bridle, h, -1, p.x, p.y, p.z, pitch, 0.0, yaw, false, false, false, false, 2, true)
+        end
+    end
+end
+-- gestion : cherche les chevaux autour (toutes les secondes), met a jour chaque image
+local stillSince, lastRef = nil, nil
+CreateThread(function()
+    local lastScan = 0
+    while true do
+        local now = GetGameTimer()
+        if not (Config.Tack and Config.Tack.enabled and tackOn) then
+            for h in pairs(tack) do removeTack(h) end
+            Wait(1000)
+        else
+            if now - lastScan > 1000 then
+                lastScan = now
+                local me = GetEntityCoords(PlayerPedId())
+                local seen = {}
+                for _, p in ipairs(GetGamePool('CPed')) do
+                    if GetEntityModel(p) == Config.Model and not IsEntityDead(p) and #(GetEntityCoords(p) - me) < Config.Tack.range then
+                        seen[p] = true
+                        if not tack[p] then addTack(p) end
+                    end
+                end
+                for h in pairs(tack) do
+                    if not seen[h] or not DoesEntityExist(h) then removeTack(h) end
+                end
+                -- reference du dos : cheval immobile, debout, non monte, ne broute pas
+                if isAlive(horse) and not mounted and not grazing and not act and GetEntitySpeed(horse) < 0.05 then
+                    stillSince = stillSince or now
+                    if now - stillSince > 2500 and (not REF or now - (lastRef or 0) > 15000) then
+                        if captureRef(horse) then lastRef = now end
+                    end
+                else
+                    stillSince = nil
+                end
+            end
+            local any = false
+            for h, t in pairs(tack) do
+                if DoesEntityExist(h) then updateTack(h, t) any = true end
+            end
+            Wait(any and 0 or 250)
+        end
+    end
+end)
+
+-- /chevalharnais            : afficher / masquer selle et bride
+-- /chevalharnais taille 140 : forcer la taille (100 120 140 160 180) | /chevalharnais taille auto
+-- /chevalharnais selle x y z : decaler la selle (sauvegarde)
+RegisterCommand('chevalharnais', function(_, a)
+    if a[1] == 'taille' then
+        tackForce = tonumber(a[2])
+        SetResourceKvp('edo_horses_tacksize', tackForce and tostring(tackForce) or '')
+        for h in pairs(tack) do removeTack(h) end
+        return notify('~g~Taille du harnachement : ' .. (tackForce and tostring(tackForce) or 'auto'))
+    elseif a[1] == 'selle' then
+        local x, y, z = tonumber(a[2]), tonumber(a[3]), tonumber(a[4])
+        if not z then
+            local o = tackOff or Config.Tack.saddleOffset
+            return notify(('Selle : %.2f %.2f %.2f  (usage : /chevalharnais selle x y z)'):format(o.x, o.y, o.z))
+        end
+        tackOff = vector3(x, y, z)
+        SetResourceKvp('edo_horses_tackoff', ('%.3f %.3f %.3f'):format(x, y, z))
+        print(('[edo_horses] Config.Tack.saddleOffset = vector3(%.3f, %.3f, %.3f)'):format(x, y, z))
+        return notify('~g~Selle deplacee.')
+    end
+    tackOn = not tackOn
+    SetResourceKvp('edo_horses_tackon', tackOn and '1' or '0')
+    notify(tackOn and '~g~Selle et bride : affichees' or '~y~Selle et bride : masquees')
+end, false)
+
 exports('GetHorseStamina', function() return stamina end)
 exports('GetHorseGait', function() return GAIT_LABEL[bandOf(speed)] end)
 exports('IsMountedOnHorse', function() return mounted end)
 exports('GetHorseEntity', function() return horse end)
 
 AddEventHandler('onResourceStop', function(res)
-    if res == GetCurrentResourceName() then deleteHorse() end
+    if res == GetCurrentResourceName() then
+        deleteHorse()
+        for h in pairs(tack) do removeTack(h) end
+    end
 end)
 
-CreateThread(function() Wait(2000) log('EDO HORSES 1.7.2 charge. /cheval ou H pour siffler.') end)
+CreateThread(function() Wait(2000) log('EDO HORSES 1.8.0 charge. /cheval ou H pour siffler.') end)

@@ -114,7 +114,7 @@ Config.ReinsIK = { forward = 0.40, up = 0.04, spread = 0.07 }
 -- Position du cavalier sur le dos du cheval (reglable en jeu : /chevalselle x y z, sauvegarde auto)
 Config.RiderOffset   = vector3(0.0, -0.08, 0.32)
 -- decalage de la selle selon le jeu d'animations du cheval (s'ajoute a /chevalselle) : x, y (- = vers l'arriere), z
-Config.DictSeatShift = { ['edo_cheval3'] = vector3(0.0, -0.33, -0.05) }
+Config.DictSeatShift = {}   -- (plus besoin : la selle et le cavalier suivent les os du dos)
 Config.RiderRotation = vector3(0.0, 0.0, 0.0)
 
 -- ============================================================
@@ -123,6 +123,16 @@ Config.RiderRotation = vector3(0.0, 0.0, 0.0)
 Config.SpawnBehind     = 12.0   -- le cheval apparait derriere toi et te rejoint
 Config.TeleportDistance = 220.0 -- trop loin : il reapparait pres de toi
 Config.MountDistance   = 2.6
+-- HARNACHEMENT (selle + bride japonaises) pose sur tous les chevaux du modele
+Config.Tack = {
+    enabled = true,
+    range = 90.0,                               -- distance d'affichage (m)
+    sizes = { 100, 120, 140, 160, 180 },        -- tailles disponibles (choisie automatiquement)
+    saddle = 'edo_selle_k', bridle = 'edo_bride_k',
+    saddleOffset = vector3(0.0, 0.0, -0.12),    -- position de la selle par rapport au cavalier (z - = plus bas)
+    riderRaise = 0.03,                          -- le cavalier s'assoit SUR la selle (epaisseur du siege)
+    bridleOffset = vector3(0.0, 0.0, 0.0),      -- y = le long de la tete (vers la bouche), z = hauteur
+}
 -- monter / descendre animes (stream/edo_monte.ycd) : durees en secondes
 Config.MountAnims = { dict = 'edo_monte2', mount = 1.90, dismount = 1.45, dismount_run = 0.85 }
 Config.MountMoveSpeed = 1.3     -- le cheval avance pendant qu'on monte (0 = il reste immobile)

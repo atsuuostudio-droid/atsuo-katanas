@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TextureDictionary>
+ <Item>
+  <Name>edo_selle_d</Name>
+  <Unk32 value="0" />
+  <Usage>DIFFUSE</Usage>
+  <UsageFlags />
+  <ExtraFlags value="0" />
+  <Width value="2048" />
+  <Height value="2048" />
+  <MipLevels value="11" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>edo_selle_d.dds</FileName>
+ </Item>
+ <Item>
+  <Name>edo_bride_d</Name>
+  <Unk32 value="0" />
+  <Usage>DIFFUSE</Usage>
+  <UsageFlags />
+  <ExtraFlags value="0" />
+  <Width value="2048" />
+  <Height value="2048" />
+  <MipLevels value="11" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>edo_bride_d.dds</FileName>
+ </Item>
+</TextureDictionary>

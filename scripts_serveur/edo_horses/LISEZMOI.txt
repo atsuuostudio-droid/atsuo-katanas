@@ -11,6 +11,15 @@ INSTALLATION
      ensure edo_horses
 5. Redemarre le serveur.
 
+SELLE ET BRIDE (1.8.0)
+- Selle et bride japonaises posees automatiquement sur tous les chevaux (tout le monde les voit).
+- La taille s'adapte toute seule au cheval (5 tailles), la selle suit le dos, la bride suit la tete.
+- En montant / descendant, les mains s'appuient sur le pommeau et le troussequin de la selle.
+- /chevalharnais               : afficher / masquer selle et bride
+- /chevalharnais taille 140    : forcer une taille (100 120 140 160 180) ; /chevalharnais taille auto
+- /chevalharnais selle x y z   : deplacer la selle (ex : /chevalharnais selle 0 -0.05 -0.10)
+- La 1re fois, laisse le cheval immobile 3 secondes avant de monter : le script mesure son dos.
+
 COMMANDES / TOUCHES
 H ou /cheval    : siffler. Le cheval apparait derriere toi et arrive au galop
                   (s'il existe deja, il te rejoint).
